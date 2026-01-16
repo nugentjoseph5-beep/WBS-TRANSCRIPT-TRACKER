@@ -146,6 +146,11 @@ function AppRoutes() {
           <StaffRequestDetail />
         </ProtectedRoute>
       } />
+      <Route path="/staff/notifications" element={
+        <ProtectedRoute allowedRoles={['staff']}>
+          <StaffNotifications />
+        </ProtectedRoute>
+      } />
 
       {/* Catch all - redirect to landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
