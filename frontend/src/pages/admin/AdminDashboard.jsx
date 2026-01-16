@@ -167,14 +167,14 @@ export default function AdminDashboard() {
                 <p className="text-stone-500 text-sm hidden md:block">Overview of transcript requests</p>
               </div>
             </div>
-            <div className="relative">
+            <Link to="/admin/notifications" className="relative" data-testid="admin-notifications-btn">
               <Bell className="h-6 w-6 text-stone-500 cursor-pointer hover:text-stone-700" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   {unreadCount}
                 </span>
               )}
-            </div>
+            </Link>
           </div>
         </header>
 
