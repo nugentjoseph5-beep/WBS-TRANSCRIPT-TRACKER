@@ -332,6 +332,102 @@ class WolmersTranscriptAPITester:
         else:
             self.log_result("Get staff members", False, f"Status: {response.status_code if response else 'No response'}")
 
+    def test_password_reset_flow(self):
+        """Test password reset functionality"""
+        print("\n🔍 Testing Password Reset Flow...")
+        
+        # Test forgot password endpoint
+        response, error = self.make_request('POST', 'auth/forgot-password', {
+            "email": self.admin_email
+        })
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'message' in data and 'token' in data:
+                reset_token = data['token']
+                self.log_result("Forgot password request", True)
+                
+                # Test token verification
+                response, error = self.make_request('GET', f'auth/verify-reset-token/{reset_token}')
+                if response and response.status_code == 200:
+                    verify_data = response.json()
+                    if verify_data.get('valid') and verify_data.get('email') == self.admin_email:
+                        self.log_result("Reset token verification", True)
+                        
+                        # Test password reset
+                        response, error = self.make_request('POST', 'auth/reset-password', {
+                            "token": reset_token,
+                            "new_password": "NewAdmin123!"
+                        })
+                        
+                        if response and response.status_code == 200:
+                            self.log_result("Password reset completion", True)
+                            
+                            # Test login with new password
+                            response, error = self.make_request('POST', 'auth/login', {
+                                "email": self.admin_email,
+                                "password": "NewAdmin123!"
+                            })
+                            
+                            if response and response.status_code == 200:
+                                self.log_result("Login with new password", True)
+                                # Reset password back to original
+                                self.admin_token = response.json()['access_token']
+                            else:
+                                self.log_result("Login with new password", False, f"Status: {response.status_code if response else 'No response'}")
+                        else:
+                            self.log_result("Password reset completion", False, f"Status: {response.status_code if response else 'No response'}")
+                    else:
+                        self.log_result("Reset token verification", False, "Invalid verification response")
+                else:
+                    self.log_result("Reset token verification", False, f"Status: {response.status_code if response else 'No response'}")
+            else:
+                self.log_result("Forgot password request", False, "Missing message or token in response")
+        else:
+            self.log_result("Forgot password request", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_transcript_request_with_institution(self):
+        """Test creating transcript request with institution name"""
+        print("\n🔍 Testing Transcript Request with Institution...")
+        
+        if not self.student_token:
+            self.log_result("Create transcript request with institution", False, "No student token available")
+            return None
+        
+        needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        # Test with emailed collection method (should require institution name)
+        request_data = {
+            "first_name": "Jane",
+            "middle_name": "Marie",
+            "last_name": "Smith",
+            "school_id": "WBS2024002",
+            "enrollment_status": "graduate",
+            "academic_year": "2023-2024",
+            "wolmers_email": "jane.smith.2024@wolmers.org",
+            "personal_email": self.test_student_email,
+            "phone_number": "+1 876 555 0124",
+            "reason": "Graduate school application",
+            "needed_by_date": needed_date,
+            "collection_method": "emailed",
+            "institution_name": "University of the West Indies",
+            "institution_email": "admissions@uwi.edu"
+        }
+        
+        response, error = self.make_request('POST', 'requests', request_data, token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'id' in data and data['institution_name'] == "University of the West Indies":
+                self.log_result("Create transcript request with institution", True)
+                return data['id']
+            else:
+                self.log_result("Create transcript request with institution", False, "Institution name not saved properly")
+        else:
+            self.log_result("Create transcript request with institution", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return None
+
     def test_auth_me(self):
         """Test auth/me endpoint for different roles"""
         print("\n🔍 Testing Auth Me Endpoint...")
