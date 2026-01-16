@@ -59,6 +59,7 @@ export const requestAPI = {
   getAllRequests: () => api.get('/requests/all'),
   getById: (id) => api.get(`/requests/${id}`),
   update: (id, data) => api.patch(`/requests/${id}`, data),
+  editAsStudent: (id, data) => api.put(`/requests/${id}/edit`, data),
   uploadDocument: (id, file) => {
     const formData = new FormData();
     formData.append('file', file);
