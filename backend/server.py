@@ -512,6 +512,51 @@ async def delete_user(user_id: str, current_user: dict = Depends(get_current_use
     
     return {"message": "User deleted successfully"}
 
+class AdminResetPassword(BaseModel):
+    new_password: str
+
+@api_router.post("/admin/users/{user_id}/reset-password")
+async def admin_reset_user_password(user_id: str, data: AdminResetPassword, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can reset passwords")
+    
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot reset your own password this way. Use the forgot password feature.")
+    
+    # Find the user
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Update password
+    new_password_hash = hash_password(data.new_password)
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"password_hash": new_password_hash, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Send notification email to user
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #800000; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">Wolmer's Boys' School</h1>
+            <p style="margin: 5px 0;">Transcript Tracker</p>
+        </div>
+        <div style="padding: 20px; background-color: #f5f5f5;">
+            <h2 style="color: #800000;">Password Reset by Administrator</h2>
+            <p>Dear {user['full_name']},</p>
+            <p>Your password has been reset by an administrator.</p>
+            <p>If you did not request this change, please contact the administrator immediately.</p>
+            <p style="color: #999; font-size: 12px; margin-top: 30px;">
+                This is an automated message from Wolmer's Boys' School Transcript Tracker.
+            </p>
+        </div>
+    </div>
+    """
+    await send_email_notification(user["email"], "Your Password Has Been Reset", html_content)
+    
+    return {"message": f"Password reset successfully for {user['full_name']}"}
+
 # ==================== TRANSCRIPT REQUESTS ====================
 
 @api_router.post("/requests", response_model=TranscriptRequestResponse)
