@@ -47,8 +47,8 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - ✅ Dashboard with request stats and list
 - ✅ **Search & Filter**: Search by name, school ID, academic year; filter by status
 - ✅ New transcript request form (all required fields)
-- ✅ **Institution Name field** shown when collection method is emailed/delivery
-- ✅ Request detail view with timeline
+- ✅ **Institution fields mandatory**: Name, Address, Email, Phone - all required on every request
+- ✅ Request detail view with timeline and institution details
 - ✅ Notifications page
 - ✅ **Edit Pending Requests**: Students can edit their transcript requests while status is "Pending"
 
@@ -58,12 +58,15 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - ✅ User management (create staff/admin, delete users)
 - ✅ Sidebar navigation
 - ✅ **Request Detail View**: Full details of any transcript request with ability to update status, reassign staff, reject requests, and upload documents
+- ✅ **Notifications page**: View and manage notifications via bell icon in header
 
 ### Frontend - Staff Portal
 - ✅ Dashboard with assigned requests
 - ✅ Request detail with status update workflow
 - ✅ Document upload functionality
 - ✅ Reject request with reason
+- ✅ **Notifications page**: View and manage notifications via bell icon in header
+- ✅ **Institution details always visible**: Name, Address, Email, Phone shown in request detail
 
 ### Password Reset Flow
 - ✅ Forgot Password page at /forgot-password
