@@ -352,6 +352,99 @@ async def get_me(user: dict = Depends(get_current_user)):
         created_at=user["created_at"]
     )
 
+# ==================== PASSWORD RESET ====================
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(request: PasswordResetRequest):
+    user = await db.users.find_one({"email": request.email}, {"_id": 0})
+    if not user:
+        # Don't reveal if email exists or not for security
+        return {"message": "If an account with this email exists, a password reset link has been sent."}
+    
+    # Generate reset token (valid for 1 hour)
+    reset_token = str(uuid.uuid4())
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    
+    # Store reset token in database
+    await db.password_resets.delete_many({"email": request.email})  # Remove old tokens
+    await db.password_resets.insert_one({
+        "token": reset_token,
+        "email": request.email,
+        "user_id": user["id"],
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Send email with reset link
+    reset_link = f"https://wbs-transcripts.preview.emergentagent.com/reset-password?token={reset_token}"
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background-color: #800000; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0;">Wolmer's Boys' School</h1>
+            <p style="margin: 5px 0;">Transcript Tracker</p>
+        </div>
+        <div style="padding: 20px; background-color: #f5f5f5;">
+            <h2 style="color: #800000;">Password Reset Request</h2>
+            <p>Dear {user['full_name']},</p>
+            <p>We received a request to reset your password. Click the button below to create a new password:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{reset_link}" style="background-color: #800000; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+            </div>
+            <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+            <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+            <p style="color: #999; font-size: 12px; margin-top: 30px;">
+                This is an automated message from Wolmer's Boys' School Transcript Tracker.
+            </p>
+        </div>
+    </div>
+    """
+    await send_email_notification(request.email, "Password Reset Request", html_content)
+    
+    # For development: log the token
+    logger.info(f"Password reset token for {request.email}: {reset_token}")
+    
+    return {"message": "If an account with this email exists, a password reset link has been sent.", "token": reset_token}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(request: PasswordResetConfirm):
+    # Find the reset token
+    reset_record = await db.password_resets.find_one({"token": request.token}, {"_id": 0})
+    
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check if token is expired
+    expires_at = datetime.fromisoformat(reset_record["expires_at"])
+    if datetime.now(timezone.utc) > expires_at:
+        await db.password_resets.delete_one({"token": request.token})
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Update user's password
+    new_password_hash = hash_password(request.new_password)
+    await db.users.update_one(
+        {"id": reset_record["user_id"]},
+        {"$set": {"password_hash": new_password_hash, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Delete the used token
+    await db.password_resets.delete_one({"token": request.token})
+    
+    return {"message": "Password has been reset successfully"}
+
+@api_router.get("/auth/verify-reset-token/{token}")
+async def verify_reset_token(token: str):
+    reset_record = await db.password_resets.find_one({"token": token}, {"_id": 0})
+    
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+    
+    expires_at = datetime.fromisoformat(reset_record["expires_at"])
+    if datetime.now(timezone.utc) > expires_at:
+        await db.password_resets.delete_one({"token": token})
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    return {"valid": True, "email": reset_record["email"]}
+
 # ==================== USER MANAGEMENT (ADMIN) ====================
 
 @api_router.post("/admin/users", response_model=UserResponse)
