@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { requestAPI, notificationAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, getStatusBadgeClass } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
   Bell, LogOut, Plus, FileText, Clock, CheckCircle, 
-  XCircle, ChevronRight, Menu, X 
+  XCircle, ChevronRight, Menu, X, Search, Filter
 } from 'lucide-react';
 
 export default function StudentDashboard() {
@@ -19,6 +21,8 @@ export default function StudentDashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     fetchData();
@@ -54,6 +58,31 @@ export default function StudentDashboard() {
         return <Clock className="h-5 w-5 text-yellow-500" />;
     }
   };
+
+  // Filter and search requests
+  const filteredRequests = useMemo(() => {
+    let filtered = [...requests];
+
+    // Apply search filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(r => 
+        r.first_name.toLowerCase().includes(term) ||
+        r.last_name.toLowerCase().includes(term) ||
+        r.school_id.toLowerCase().includes(term) ||
+        r.academic_year.toLowerCase().includes(term) ||
+        r.reason.toLowerCase().includes(term) ||
+        (r.institution_name && r.institution_name.toLowerCase().includes(term))
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(r => r.status === statusFilter);
+    }
+
+    return filtered;
+  }, [requests, searchTerm, statusFilter]);
 
   const stats = {
     total: requests.length,
@@ -227,8 +256,8 @@ export default function StudentDashboard() {
           </Card>
         </div>
 
-        {/* New Request Button */}
-        <div className="mb-8">
+        {/* Action Bar */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
           <Link to="/student/new-request">
             <Button className="bg-maroon-500 hover:bg-maroon-600 text-white" data-testid="new-request-btn">
               <Plus className="h-4 w-4 mr-2" />
@@ -237,10 +266,46 @@ export default function StudentDashboard() {
           </Link>
         </div>
 
+        {/* Search and Filter */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+            <Input
+              placeholder="Search by name, school ID, academic year..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+              data-testid="search-input"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full md:w-48" data-testid="status-filter">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="Pending">Pending</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="Processing">Processing</SelectItem>
+              <SelectItem value="Ready">Ready</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
+              <SelectItem value="Rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Requests List */}
         <Card className="bg-white">
           <CardHeader className="border-b border-stone-100">
-            <CardTitle className="font-heading text-xl">My Requests</CardTitle>
+            <CardTitle className="font-heading text-xl flex items-center justify-between">
+              <span>My Requests</span>
+              {filteredRequests.length !== requests.length && (
+                <span className="text-sm font-normal text-stone-500">
+                  Showing {filteredRequests.length} of {requests.length}
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {loading ? (
@@ -260,9 +325,21 @@ export default function StudentDashboard() {
                   </Button>
                 </Link>
               </div>
+            ) : filteredRequests.length === 0 ? (
+              <div className="p-8 text-center">
+                <Search className="h-12 w-12 text-stone-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-stone-900 mb-2">No matching requests</h3>
+                <p className="text-stone-500 mb-4">Try adjusting your search or filter criteria</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
+                >
+                  Clear filters
+                </Button>
+              </div>
             ) : (
               <div className="divide-y divide-stone-100">
-                {requests.map((request) => (
+                {filteredRequests.map((request) => (
                   <Link
                     key={request.id}
                     to={`/student/request/${request.id}`}
@@ -276,7 +353,12 @@ export default function StudentDashboard() {
                           {request.first_name} {request.last_name} - {request.academic_year}
                         </p>
                         <p className="text-sm text-stone-500">
-                          Submitted {formatDate(request.created_at)} • {request.collection_method}
+                          Submitted {formatDate(request.created_at)} • {
+                            request.collection_method === 'pickup' ? 'Pickup at Bursary' :
+                            request.collection_method === 'emailed' ? 'Email to Institution' :
+                            'Physical Delivery'
+                          }
+                          {request.institution_name && ` • ${request.institution_name}`}
                         </p>
                       </div>
                     </div>
