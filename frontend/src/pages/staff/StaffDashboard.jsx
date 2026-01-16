@@ -87,14 +87,14 @@ export default function StaffDashboard() {
               <Link to="/staff" className="text-gold-600 font-medium">
                 My Assignments
               </Link>
-              <div className="relative">
+              <Link to="/staff/notifications" className="relative" data-testid="staff-notifications-btn">
                 <Bell className="h-5 w-5 text-stone-500 cursor-pointer hover:text-stone-700" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                     {unreadCount}
                   </span>
                 )}
-              </div>
+              </Link>
             </nav>
 
             {/* User Menu */}
