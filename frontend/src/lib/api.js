@@ -49,6 +49,7 @@ export const userAPI = {
   getAllUsers: () => api.get('/admin/users'),
   getStaffMembers: () => api.get('/admin/staff'),
   deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
+  resetUserPassword: (userId, newPassword) => api.post(`/admin/users/${userId}/reset-password`, { new_password: newPassword }),
 };
 
 // Transcript Request API
