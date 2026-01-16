@@ -60,7 +60,7 @@ export default function RegisterPage() {
       <div 
         className="hidden lg:flex flex-col justify-between p-12 relative"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1705756566946-f39616809f5c?crop=entropy&cs=srgb&fm=jpg&q=85')`,
+          backgroundImage: `url('https://customer-assets.emergentagent.com/job_wbs-transcripts/artifacts/wneuo6w3_Wolmers-Boys-High-School.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

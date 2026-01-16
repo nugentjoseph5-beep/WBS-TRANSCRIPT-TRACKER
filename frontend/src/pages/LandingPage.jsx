@@ -11,7 +11,7 @@ export default function LandingPage() {
         <div 
           className="absolute inset-0 h-[600px] bg-cover bg-center"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1705756566946-f39616809f5c?crop=entropy&cs=srgb&fm=jpg&q=85')`,
+            backgroundImage: `url('https://customer-assets.emergentagent.com/job_wbs-transcripts/artifacts/wneuo6w3_Wolmers-Boys-High-School.jpg')`,
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-maroon-500/90 via-maroon-500/80 to-maroon-900/95"></div>
