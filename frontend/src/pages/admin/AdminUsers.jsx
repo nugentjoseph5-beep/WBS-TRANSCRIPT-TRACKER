@@ -14,7 +14,7 @@ import { formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
   LayoutDashboard, FileText, Users, LogOut, Menu, X,
-  UserPlus, Trash2, Loader2, Search
+  UserPlus, Trash2, Loader2, Search, KeyRound
 } from 'lucide-react';
 
 export default function AdminUsers() {
@@ -29,9 +29,13 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [userToResetPassword, setUserToResetPassword] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
   const [newUser, setNewUser] = useState({
     full_name: '',
     email: '',
@@ -110,6 +114,31 @@ export default function AdminUsers() {
       toast.error(error.response?.data?.detail || 'Failed to delete user');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!userToResetPassword || !newPassword) {
+      toast.error('Please enter a new password');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setResettingPassword(true);
+    try {
+      await userAPI.resetUserPassword(userToResetPassword.id, newPassword);
+      toast.success(`Password reset successfully for ${userToResetPassword.full_name}`);
+      setResetPasswordDialogOpen(false);
+      setUserToResetPassword(null);
+      setNewPassword('');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to reset password');
+    } finally {
+      setResettingPassword(false);
     }
   };
 
@@ -288,20 +317,37 @@ export default function AdminUsers() {
                           </td>
                           <td className="py-3 px-4 text-stone-500">{formatDate(u.created_at)}</td>
                           <td className="py-3 px-4">
-                            {u.id !== user?.id && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => {
-                                  setUserToDelete(u);
-                                  setDeleteDialogOpen(true);
-                                }}
-                                data-testid={`delete-user-btn-${u.id}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <div className="flex items-center gap-2">
+                              {u.id !== user?.id && (u.role === 'staff' || u.role === 'admin') && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                  onClick={() => {
+                                    setUserToResetPassword(u);
+                                    setResetPasswordDialogOpen(true);
+                                  }}
+                                  data-testid={`reset-password-btn-${u.id}`}
+                                  title="Reset Password"
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {u.id !== user?.id && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    setUserToDelete(u);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  data-testid={`delete-user-btn-${u.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -378,6 +424,51 @@ export default function AdminUsers() {
             >
               {creating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Create User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-heading flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-blue-500" />
+              Reset Password
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-stone-600 mb-4">
+              Set a new password for <strong>{userToResetPassword?.full_name}</strong>
+            </p>
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password (min 6 characters)"
+                data-testid="reset-password-input"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setResetPasswordDialogOpen(false);
+              setUserToResetPassword(null);
+              setNewPassword('');
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleResetPassword}
+              disabled={resettingPassword || !newPassword}
+              className="bg-blue-500 hover:bg-blue-600"
+              data-testid="confirm-reset-password-btn"
+            >
+              {resettingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Reset Password
             </Button>
           </DialogFooter>
         </DialogContent>
