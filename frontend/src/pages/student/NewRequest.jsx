@@ -327,43 +327,49 @@ export default function NewRequest() {
             </CardContent>
           </Card>
 
-          {/* Institution Details (shown if emailed or delivery selected) */}
-          {(formData.collection_method === 'emailed' || formData.collection_method === 'delivery') && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="font-heading text-lg">Institution Details</CardTitle>
-                <CardDescription>Where should we send the transcript?</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          {/* Institution Details (shown for all collection methods) */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="font-heading text-lg">Institution Details</CardTitle>
+              <CardDescription>
+                {formData.collection_method === 'pickup' 
+                  ? 'Institution requesting the transcript (optional for pickup)'
+                  : 'Where should we send the transcript?'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="institution_name">
+                  Institution Name {(formData.collection_method === 'emailed' || formData.collection_method === 'delivery') && '*'}
+                </Label>
+                <Input
+                  id="institution_name"
+                  name="institution_name"
+                  value={formData.institution_name}
+                  onChange={handleChange}
+                  required={formData.collection_method === 'emailed' || formData.collection_method === 'delivery'}
+                  placeholder="e.g., University of the West Indies"
+                  data-testid="institution-name-input"
+                />
+              </div>
+
+              {formData.collection_method === 'delivery' && (
                 <div className="space-y-2">
-                  <Label htmlFor="institution_name">Institution Name *</Label>
-                  <Input
-                    id="institution_name"
-                    name="institution_name"
-                    value={formData.institution_name}
+                  <Label htmlFor="institution_address">Institution Address *</Label>
+                  <Textarea
+                    id="institution_address"
+                    name="institution_address"
+                    value={formData.institution_address}
                     onChange={handleChange}
-                    required
-                    placeholder="e.g., University of the West Indies"
-                    data-testid="institution-name-input"
+                    required={formData.collection_method === 'delivery'}
+                    placeholder="Enter full address including city and country"
+                    rows={3}
+                    data-testid="institution-address-input"
                   />
                 </div>
+              )}
 
-                {formData.collection_method === 'delivery' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="institution_address">Institution Address *</Label>
-                    <Textarea
-                      id="institution_address"
-                      name="institution_address"
-                      value={formData.institution_address}
-                      onChange={handleChange}
-                      required={formData.collection_method === 'delivery'}
-                      placeholder="Enter full address including city and country"
-                      rows={3}
-                      data-testid="institution-address-input"
-                    />
-                  </div>
-                )}
-
+              {(formData.collection_method === 'emailed' || formData.collection_method === 'delivery') && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="institution_phone">Institution Phone</Label>
@@ -390,9 +396,9 @@ export default function NewRequest() {
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
 
           {/* Submit */}
           <div className="flex justify-end gap-4">
