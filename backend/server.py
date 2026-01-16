@@ -376,7 +376,8 @@ async def forgot_password(request: PasswordResetRequest):
     })
     
     # Send email with reset link
-    reset_link = f"https://wbs-transcripts.preview.emergentagent.com/reset-password?token={reset_token}"
+    frontend_url = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
     html_content = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background-color: #800000; color: white; padding: 20px; text-align: center;">
@@ -832,18 +833,76 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can view analytics")
     
-    # Total counts by status
-    total = await db.transcript_requests.count_documents({})
-    pending = await db.transcript_requests.count_documents({"status": "Pending"})
-    in_progress = await db.transcript_requests.count_documents({"status": "In Progress"})
-    processing = await db.transcript_requests.count_documents({"status": "Processing"})
-    ready = await db.transcript_requests.count_documents({"status": "Ready"})
-    completed = await db.transcript_requests.count_documents({"status": "Completed"})
-    rejected = await db.transcript_requests.count_documents({"status": "Rejected"})
+    # Use aggregation pipeline for optimized queries
+    pipeline = [
+        {
+            "$facet": {
+                "status_counts": [
+                    {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+                ],
+                "enrollment_counts": [
+                    {"$group": {"_id": "$enrollment_status", "count": {"$sum": 1}}}
+                ],
+                "collection_counts": [
+                    {"$group": {"_id": "$collection_method", "count": {"$sum": 1}}}
+                ],
+                "total": [
+                    {"$count": "count"}
+                ]
+            }
+        }
+    ]
     
-    # Requests by month (last 6 months)
-    requests_by_month = []
+    result = await db.transcript_requests.aggregate(pipeline).to_list(1)
+    
+    # Parse aggregation results
+    if result:
+        data = result[0]
+        
+        # Get total
+        total = data["total"][0]["count"] if data["total"] else 0
+        
+        # Parse status counts
+        status_map = {item["_id"]: item["count"] for item in data["status_counts"]}
+        pending = status_map.get("Pending", 0)
+        in_progress = status_map.get("In Progress", 0)
+        processing = status_map.get("Processing", 0)
+        ready = status_map.get("Ready", 0)
+        completed = status_map.get("Completed", 0)
+        rejected = status_map.get("Rejected", 0)
+        
+        # Parse enrollment counts
+        enrollment_map = {item["_id"]: item["count"] for item in data["enrollment_counts"]}
+        requests_by_enrollment = [
+            {"name": "Enrolled", "value": enrollment_map.get("enrolled", 0)},
+            {"name": "Graduate", "value": enrollment_map.get("graduate", 0)},
+            {"name": "Withdrawn", "value": enrollment_map.get("withdrawn", 0)}
+        ]
+        
+        # Parse collection method counts
+        collection_map = {item["_id"]: item["count"] for item in data["collection_counts"]}
+        requests_by_collection_method = [
+            {"name": "Pickup at Bursary", "value": collection_map.get("pickup", 0)},
+            {"name": "Emailed to Institution", "value": collection_map.get("emailed", 0)},
+            {"name": "Physical Delivery", "value": collection_map.get("delivery", 0)}
+        ]
+    else:
+        total = pending = in_progress = processing = ready = completed = rejected = 0
+        requests_by_enrollment = [
+            {"name": "Enrolled", "value": 0},
+            {"name": "Graduate", "value": 0},
+            {"name": "Withdrawn", "value": 0}
+        ]
+        requests_by_collection_method = [
+            {"name": "Pickup at Bursary", "value": 0},
+            {"name": "Emailed to Institution", "value": 0},
+            {"name": "Physical Delivery", "value": 0}
+        ]
+    
+    # Requests by month (last 6 months) - using aggregation
     now = datetime.now(timezone.utc)
+    requests_by_month = []
+    
     for i in range(5, -1, -1):
         month_start = (now.replace(day=1) - timedelta(days=i*30)).replace(day=1)
         month_end = (month_start + timedelta(days=32)).replace(day=1)
@@ -858,28 +917,6 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
             "month": month_start.strftime("%b %Y"),
             "count": count
         })
-    
-    # Requests by enrollment status
-    enrolled_count = await db.transcript_requests.count_documents({"enrollment_status": "enrolled"})
-    graduate_count = await db.transcript_requests.count_documents({"enrollment_status": "graduate"})
-    withdrawn_count = await db.transcript_requests.count_documents({"enrollment_status": "withdrawn"})
-    
-    requests_by_enrollment = [
-        {"name": "Enrolled", "value": enrolled_count},
-        {"name": "Graduate", "value": graduate_count},
-        {"name": "Withdrawn", "value": withdrawn_count}
-    ]
-    
-    # Requests by collection method
-    pickup_count = await db.transcript_requests.count_documents({"collection_method": "pickup"})
-    emailed_count = await db.transcript_requests.count_documents({"collection_method": "emailed"})
-    delivery_count = await db.transcript_requests.count_documents({"collection_method": "delivery"})
-    
-    requests_by_collection_method = [
-        {"name": "Pickup at Bursary", "value": pickup_count},
-        {"name": "Emailed to Institution", "value": emailed_count},
-        {"name": "Physical Delivery", "value": delivery_count}
-    ]
     
     return AnalyticsResponse(
         total_requests=total,
