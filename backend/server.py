@@ -98,9 +98,17 @@ class TranscriptRequestCreate(BaseModel):
     reason: str
     needed_by_date: str
     collection_method: str  # pickup, emailed, delivery
+    institution_name: Optional[str] = ""
     institution_address: Optional[str] = ""
     institution_phone: Optional[str] = ""
     institution_email: Optional[str] = ""
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
 
 class TranscriptRequestUpdate(BaseModel):
     status: Optional[str] = None
@@ -125,6 +133,7 @@ class TranscriptRequestResponse(BaseModel):
     reason: str
     needed_by_date: str
     collection_method: str
+    institution_name: str = ""
     institution_address: str
     institution_phone: str
     institution_email: str
