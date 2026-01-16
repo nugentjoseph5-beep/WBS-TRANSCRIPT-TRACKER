@@ -620,6 +620,8 @@ class WolmersTranscriptAPITester:
             self.log_result("Initial staff assignment", False, f"Status: {response.status_code if response else 'No response'}")
         
         return False
+
+    def test_auth_me(self):
         """Test auth/me endpoint for different roles"""
         print("\n🔍 Testing Auth Me Endpoint...")
         
