@@ -49,9 +49,11 @@ export default function LoginPage() {
         
         <div className="relative z-10">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gold-500 flex items-center justify-center">
-              <span className="font-heading text-maroon-500 text-xl font-bold">W</span>
-            </div>
+            <img 
+              src="https://static.prod-images.emergentagent.com/jobs/13afcd2c-9b31-4868-9eb9-1450f0dbe963/images/7a745def6cecbed258ad447238bdd509434c8ac5c132a51fde220305ad9b582b.png" 
+              alt="Wolmer's Boys' School Crest" 
+              className="w-14 h-14 object-contain"
+            />
             <div>
               <h1 className="font-heading text-white text-xl font-semibold">Wolmer's Boys' School</h1>
               <p className="text-gold-400 text-sm">Est. 1729</p>
@@ -73,9 +75,11 @@ export default function LoginPage() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-maroon-500 flex items-center justify-center">
-                <span className="font-heading text-gold-500 text-xl font-bold">W</span>
-              </div>
+              <img 
+                src="https://static.prod-images.emergentagent.com/jobs/13afcd2c-9b31-4868-9eb9-1450f0dbe963/images/7a745def6cecbed258ad447238bdd509434c8ac5c132a51fde220305ad9b582b.png" 
+                alt="Wolmer's Boys' School Crest" 
+                className="w-12 h-12 object-contain"
+              />
               <div className="text-left">
                 <h1 className="font-heading text-stone-900 text-lg font-semibold">Wolmer's Boys' School</h1>
                 <p className="text-stone-500 text-sm">Transcript Tracker</p>
