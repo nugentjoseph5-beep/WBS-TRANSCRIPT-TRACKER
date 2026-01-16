@@ -50,12 +50,14 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - ✅ **Institution Name field** shown when collection method is emailed/delivery
 - ✅ Request detail view with timeline
 - ✅ Notifications page
+- ✅ **Edit Pending Requests**: Students can edit their transcript requests while status is "Pending"
 
 ### Frontend - Admin Portal
 - ✅ Dashboard with analytics charts (pie, bar)
 - ✅ Request management with staff assignment
 - ✅ User management (create staff/admin, delete users)
 - ✅ Sidebar navigation
+- ✅ **Request Detail View**: Full details of any transcript request with ability to update status, reassign staff, reject requests, and upload documents
 
 ### Frontend - Staff Portal
 - ✅ Dashboard with assigned requests
@@ -75,6 +77,8 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - ✅ Playfair Display (headings) + Inter (body) fonts
 - ✅ School building header image
 - ✅ Responsive design for mobile
+- ✅ **Official Wolmer's Schools Logo**: Sun breaking through clouds crest with "Age Quod Agis" motto displayed across all pages
+- ✅ **Updated School Motto**: "Age Quod Agis: Whatever you do, do it to the best of your ability"
 
 ## Prioritized Backlog
 
