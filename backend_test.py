@@ -666,6 +666,7 @@ class WolmersTranscriptAPITester:
             self.test_create_staff_user()
             self.test_staff_login()
             self.test_user_management()
+            self.test_admin_reset_user_password()  # New test
             self.test_analytics()
         
         # Test auth/me for all roles
@@ -674,6 +675,7 @@ class WolmersTranscriptAPITester:
         # Transcript request tests
         request_id = self.test_create_transcript_request()
         self.test_transcript_request_with_institution()
+        self.test_request_reassignment()  # New test
         self.test_get_requests()
         
         # Notification tests
