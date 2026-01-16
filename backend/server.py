@@ -543,6 +543,7 @@ async def create_transcript_request(request_data: TranscriptRequestCreate, curre
         "reason": request_data.reason,
         "needed_by_date": request_data.needed_by_date,
         "collection_method": request_data.collection_method,
+        "institution_name": request_data.institution_name or "",
         "institution_address": request_data.institution_address or "",
         "institution_phone": request_data.institution_phone or "",
         "institution_email": request_data.institution_email or "",
