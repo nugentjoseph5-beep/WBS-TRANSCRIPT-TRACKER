@@ -258,13 +258,30 @@ export default function AdminRequests() {
                           </td>
                           <td className="py-3 px-4">
                             {request.assigned_staff_name ? (
-                              <span className="text-stone-600">{request.assigned_staff_name}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-stone-600">{request.assigned_staff_name}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 text-stone-400 hover:text-maroon-500"
+                                  onClick={() => {
+                                    setSelectedRequest(request);
+                                    setSelectedStaff(request.assigned_staff_id || '');
+                                    setAssignDialogOpen(true);
+                                  }}
+                                  data-testid={`reassign-btn-${request.id}`}
+                                  title="Reassign"
+                                >
+                                  <UserPlus className="h-3 w-3" />
+                                </Button>
+                              </div>
                             ) : (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
                                   setSelectedRequest(request);
+                                  setSelectedStaff('');
                                   setAssignDialogOpen(true);
                                 }}
                                 data-testid={`assign-btn-${request.id}`}
