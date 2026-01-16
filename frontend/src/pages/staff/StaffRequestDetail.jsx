@@ -293,6 +293,25 @@ export default function StaffRequestDetail() {
                   <p className="font-medium">{request.reason}</p>
                 </div>
 
+                {/* Destination Institution - Show prominently */}
+                {request.institution_name && (
+                  <div className="pt-4 border-t border-stone-100">
+                    <p className="text-sm text-stone-500 mb-2">Destination Institution</p>
+                    <div className="bg-gold-50 border border-gold-200 rounded-lg p-4">
+                      <p className="font-semibold text-stone-900 mb-1">{request.institution_name}</p>
+                      {request.institution_address && (
+                        <p className="text-sm text-stone-600">{request.institution_address}</p>
+                      )}
+                      {request.institution_email && (
+                        <p className="text-sm text-stone-600">{request.institution_email}</p>
+                      )}
+                      {request.institution_phone && (
+                        <p className="text-sm text-stone-600">{request.institution_phone}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {request.rejection_reason && (
                   <div className="pt-4 border-t border-stone-100">
                     <p className="text-sm text-red-500 mb-1">Rejection Reason</p>
