@@ -314,9 +314,16 @@ export default function AdminRequests() {
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-heading">Assign Staff Member</DialogTitle>
+            <DialogTitle className="font-heading">
+              {selectedRequest?.assigned_staff_id ? 'Reassign Staff Member' : 'Assign Staff Member'}
+            </DialogTitle>
           </DialogHeader>
           <div className="py-4">
+            {selectedRequest?.assigned_staff_name && (
+              <p className="text-sm text-stone-500 mb-4">
+                Currently assigned to: <strong>{selectedRequest.assigned_staff_name}</strong>
+              </p>
+            )}
             <Label>Select Staff Member</Label>
             <Select value={selectedStaff} onValueChange={setSelectedStaff}>
               <SelectTrigger className="mt-2" data-testid="staff-select">
@@ -326,6 +333,7 @@ export default function AdminRequests() {
                 {staffMembers.map((staff) => (
                   <SelectItem key={staff.id} value={staff.id}>
                     {staff.full_name}
+                    {staff.id === selectedRequest?.assigned_staff_id && ' (current)'}
                   </SelectItem>
                 ))}
               </SelectContent>
