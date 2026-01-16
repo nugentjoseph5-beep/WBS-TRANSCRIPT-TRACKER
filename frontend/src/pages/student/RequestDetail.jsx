@@ -313,7 +313,7 @@ export default function RequestDetail() {
             </Card>
 
             {/* Institution Info (if applicable) */}
-            {(request.institution_address || request.institution_email) && (
+            {(request.institution_name || request.institution_address || request.institution_email) && (
               <Card>
                 <CardHeader>
                   <CardTitle className="font-heading text-lg flex items-center gap-2">
@@ -322,6 +322,15 @@ export default function RequestDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {request.institution_name && (
+                    <div className="flex items-start gap-3">
+                      <Building className="h-5 w-5 text-stone-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-stone-500">Institution Name</p>
+                        <p className="font-medium text-sm">{request.institution_name}</p>
+                      </div>
+                    </div>
+                  )}
                   {request.institution_address && (
                     <div className="flex items-start gap-3">
                       <MapPin className="h-5 w-5 text-stone-400 mt-0.5" />
