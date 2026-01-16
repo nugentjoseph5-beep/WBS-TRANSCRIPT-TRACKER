@@ -33,6 +33,7 @@ export default function NewRequest() {
     phone_number: '',
     reason: '',
     collection_method: '',
+    institution_name: '',
     institution_address: '',
     institution_phone: '',
     institution_email: '',
@@ -52,6 +53,12 @@ export default function NewRequest() {
     
     if (!neededByDate) {
       toast.error('Please select a date by which you need the transcript');
+      return;
+    }
+
+    // Validate institution name for emailed/delivery methods
+    if ((formData.collection_method === 'emailed' || formData.collection_method === 'delivery') && !formData.institution_name) {
+      toast.error('Please enter the institution name');
       return;
     }
 
@@ -328,6 +335,19 @@ export default function NewRequest() {
                 <CardDescription>Where should we send the transcript?</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="institution_name">Institution Name *</Label>
+                  <Input
+                    id="institution_name"
+                    name="institution_name"
+                    value={formData.institution_name}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g., University of the West Indies"
+                    data-testid="institution-name-input"
+                  />
+                </div>
+
                 {formData.collection_method === 'delivery' && (
                   <div className="space-y-2">
                     <Label htmlFor="institution_address">Institution Address *</Label>
