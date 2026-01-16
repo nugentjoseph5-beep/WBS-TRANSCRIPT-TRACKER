@@ -423,46 +423,45 @@ export default function StaffRequestDetail() {
               </CardContent>
             </Card>
 
-            {/* Institution Info */}
-            {(request.institution_address || request.institution_email) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-heading text-lg flex items-center gap-2">
-                    <Building className="h-5 w-5 text-gold-500" />
-                    Destination Institution
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {request.institution_address && (
-                    <div className="flex items-start gap-3">
-                      <MapPin className="h-5 w-5 text-stone-400 mt-0.5" />
-                      <div>
-                        <p className="text-sm text-stone-500">Address</p>
-                        <p className="font-medium text-sm">{request.institution_address}</p>
-                      </div>
-                    </div>
-                  )}
-                  {request.institution_email && (
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-5 w-5 text-stone-400 mt-0.5" />
-                      <div>
-                        <p className="text-sm text-stone-500">Email</p>
-                        <p className="font-medium text-sm break-all">{request.institution_email}</p>
-                      </div>
-                    </div>
-                  )}
-                  {request.institution_phone && (
-                    <div className="flex items-start gap-3">
-                      <Phone className="h-5 w-5 text-stone-400 mt-0.5" />
-                      <div>
-                        <p className="text-sm text-stone-500">Phone</p>
-                        <p className="font-medium text-sm">{request.institution_phone}</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+            {/* Institution Info - Always show */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <Building className="h-5 w-5 text-gold-500" />
+                  Destination Institution
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Building className="h-5 w-5 text-stone-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-stone-500">Institution Name</p>
+                    <p className="font-medium text-sm">{request.institution_name || 'Not provided'}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-5 w-5 text-stone-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-stone-500">Address</p>
+                    <p className="font-medium text-sm">{request.institution_address || 'Not provided'}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-stone-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-stone-500">Email</p>
+                    <p className="font-medium text-sm break-all">{request.institution_email || 'Not provided'}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Phone className="h-5 w-5 text-stone-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-stone-500">Phone</p>
+                    <p className="font-medium text-sm">{request.institution_phone || 'Not provided'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Request Metadata */}
             <Card>
