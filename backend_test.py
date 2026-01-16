@@ -485,7 +485,141 @@ class WolmersTranscriptAPITester:
         
         return None
 
-    def test_auth_me(self):
+    def test_admin_reset_user_password(self):
+        """Test admin resetting user password"""
+        print("\n🔍 Testing Admin Reset User Password...")
+        
+        if not self.admin_token:
+            self.log_result("Admin reset user password", False, "No admin token available")
+            return False
+        
+        # First get all users to find a staff member to reset password for
+        response, error = self.make_request('GET', 'admin/users', token=self.admin_token)
+        if not response or response.status_code != 200:
+            self.log_result("Admin reset user password", False, "Could not get users list")
+            return False
+        
+        users = response.json()
+        staff_user = None
+        for user in users:
+            if user['role'] == 'staff' and user['email'] == self.test_staff_email:
+                staff_user = user
+                break
+        
+        if not staff_user:
+            self.log_result("Admin reset user password", False, "No staff user found to test password reset")
+            return False
+        
+        # Test resetting the staff user's password
+        new_password = "NewStaffPass123!"
+        response, error = self.make_request('POST', f'admin/users/{staff_user["id"]}/reset-password', {
+            "new_password": new_password
+        }, token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'message' in data and staff_user['full_name'] in data['message']:
+                self.log_result("Admin reset user password", True)
+                
+                # Test login with new password
+                response, error = self.make_request('POST', 'auth/login', {
+                    "email": self.test_staff_email,
+                    "password": new_password
+                })
+                
+                if response and response.status_code == 200:
+                    self.log_result("Login with reset password", True)
+                    return True
+                else:
+                    self.log_result("Login with reset password", False, f"Status: {response.status_code if response else 'No response'}")
+            else:
+                self.log_result("Admin reset user password", False, "Invalid response message")
+        else:
+            self.log_result("Admin reset user password", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return False
+
+    def test_request_reassignment(self):
+        """Test admin reassigning requests between staff members"""
+        print("\n🔍 Testing Request Reassignment...")
+        
+        if not self.admin_token or not self.student_token:
+            self.log_result("Request reassignment", False, "Missing required tokens")
+            return False
+        
+        # First create a transcript request
+        needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        request_data = {
+            "first_name": "Test",
+            "middle_name": "Reassign",
+            "last_name": "User",
+            "school_id": "WBS2024005",
+            "enrollment_status": "graduate",
+            "academic_year": "2023-2024",
+            "wolmers_email": "test.reassign.2024@wolmers.org",
+            "personal_email": self.test_student_email,
+            "phone_number": "+1 876 555 0127",
+            "reason": "Testing reassignment",
+            "needed_by_date": needed_date,
+            "collection_method": "pickup",
+            "institution_name": "Test University"
+        }
+        
+        response, error = self.make_request('POST', 'requests', request_data, token=self.student_token)
+        if not response or response.status_code != 200:
+            self.log_result("Request reassignment", False, "Could not create test request")
+            return False
+        
+        request_id = response.json()['id']
+        
+        # Get staff members
+        response, error = self.make_request('GET', 'admin/staff', token=self.admin_token)
+        if not response or response.status_code != 200:
+            self.log_result("Request reassignment", False, "Could not get staff members")
+            return False
+        
+        staff_members = response.json()
+        if len(staff_members) == 0:
+            self.log_result("Request reassignment", False, "No staff members available for assignment")
+            return False
+        
+        staff_id = staff_members[0]['id']
+        
+        # Test initial assignment
+        response, error = self.make_request('PATCH', f'requests/{request_id}', {
+            "assigned_staff_id": staff_id
+        }, token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if data['assigned_staff_id'] == staff_id:
+                self.log_result("Initial staff assignment", True)
+                
+                # Test reassignment (if we have multiple staff members)
+                if len(staff_members) > 1:
+                    new_staff_id = staff_members[1]['id']
+                    response, error = self.make_request('PATCH', f'requests/{request_id}', {
+                        "assigned_staff_id": new_staff_id
+                    }, token=self.admin_token)
+                    
+                    if response and response.status_code == 200:
+                        data = response.json()
+                        if data['assigned_staff_id'] == new_staff_id:
+                            self.log_result("Staff reassignment", True)
+                            return True
+                        else:
+                            self.log_result("Staff reassignment", False, "Staff ID not updated properly")
+                    else:
+                        self.log_result("Staff reassignment", False, f"Status: {response.status_code if response else 'No response'}")
+                else:
+                    self.log_result("Staff reassignment", True, "Only one staff member available, skipping reassignment test")
+                    return True
+            else:
+                self.log_result("Initial staff assignment", False, "Staff ID not assigned properly")
+        else:
+            self.log_result("Initial staff assignment", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return False
         """Test auth/me endpoint for different roles"""
         print("\n🔍 Testing Auth Me Endpoint...")
         
