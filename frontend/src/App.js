@@ -129,6 +129,11 @@ function AppRoutes() {
           <AdminUsers />
         </ProtectedRoute>
       } />
+      <Route path="/admin/notifications" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminNotifications />
+        </ProtectedRoute>
+      } />
 
       {/* Staff Routes */}
       <Route path="/staff" element={
