@@ -16,6 +16,7 @@ import EditRequest from "@/pages/student/EditRequest";
 import StudentNotifications from "@/pages/student/StudentNotifications";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRequests from "@/pages/admin/AdminRequests";
+import AdminRequestDetail from "@/pages/admin/AdminRequestDetail";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import StaffDashboard from "@/pages/staff/StaffDashboard";
 import StaffRequestDetail from "@/pages/staff/StaffRequestDetail";
@@ -114,6 +115,11 @@ function AppRoutes() {
       <Route path="/admin/requests" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <AdminRequests />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/request/:id" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminRequestDetail />
         </ProtectedRoute>
       } />
       <Route path="/admin/users" element={

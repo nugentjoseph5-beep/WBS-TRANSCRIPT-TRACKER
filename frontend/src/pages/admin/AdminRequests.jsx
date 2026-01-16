@@ -304,8 +304,8 @@ export default function AdminRequests() {
                           </td>
                           <td className="py-3 px-4 text-stone-500">{formatDate(request.created_at)}</td>
                           <td className="py-3 px-4">
-                            <Link to={`/staff/request/${request.id}`}>
-                              <Button variant="ghost" size="sm">
+                            <Link to={`/admin/request/${request.id}`}>
+                              <Button variant="ghost" size="sm" data-testid={`view-detail-btn-${request.id}`}>
                                 <ChevronRight className="h-4 w-4" />
                               </Button>
                             </Link>
