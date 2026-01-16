@@ -17,6 +17,7 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - Privacy enforcement (students only see their own requests)
 - Status workflow: Pending → In Progress → Processing → Ready → Completed
 - Reject functionality with reason tracking
+- Password reset functionality
 
 ## Tech Stack
 - **Backend**: FastAPI (Python) with JWT authentication
@@ -38,12 +39,15 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - ✅ In-app notification system
 - ✅ Analytics API with aggregated data
 - ✅ Default admin account seeding (admin@wolmers.org / Admin123!)
+- ✅ Password reset functionality (forgot password, token verification, reset)
 
 ### Frontend - Student Portal
 - ✅ Registration page with full name, email, password
-- ✅ Login page with split-screen layout
+- ✅ Login page with split-screen layout and "Forgot password?" link
 - ✅ Dashboard with request stats and list
+- ✅ **Search & Filter**: Search by name, school ID, academic year; filter by status
 - ✅ New transcript request form (all required fields)
+- ✅ **Institution Name field** shown when collection method is emailed/delivery
 - ✅ Request detail view with timeline
 - ✅ Notifications page
 
@@ -59,6 +63,12 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - ✅ Document upload functionality
 - ✅ Reject request with reason
 
+### Password Reset Flow
+- ✅ Forgot Password page at /forgot-password
+- ✅ Reset Password page at /reset-password?token=xxx
+- ✅ Token verification and expiration (1 hour)
+- ✅ Email notification with reset link
+
 ### Design
 - ✅ Maroon (#800000) and Gold (#FFD700) color palette
 - ✅ White background with colored accents
@@ -73,12 +83,14 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - [x] Authentication system
 - [x] Transcript request workflow
 - [x] Status tracking with timeline
+- [x] Password reset functionality
+- [x] Student search/filter
+- [x] Institution name on request form
 
 ### P1 - High Priority
 - [ ] Configure Resend API for actual email delivery
-- [ ] Add password reset functionality
-- [ ] Add request search/filter for students
 - [ ] Export analytics to PDF/CSV
+- [ ] Add pagination for large request lists
 
 ### P2 - Medium Priority
 - [ ] Bulk status update for admin
@@ -96,17 +108,34 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 - **Admin**: admin@wolmers.org / Admin123!
 
 ## API Endpoints
+### Authentication
 - POST /api/auth/register - Student registration
 - POST /api/auth/login - User login
 - GET /api/auth/me - Get current user
-- POST /api/admin/users - Create staff/admin (admin only)
-- GET /api/admin/users - List all users (admin only)
-- DELETE /api/admin/users/{id} - Delete user (admin only)
+- POST /api/auth/forgot-password - Request password reset
+- GET /api/auth/verify-reset-token/{token} - Verify reset token
+- POST /api/auth/reset-password - Reset password with token
+
+### User Management (Admin)
+- POST /api/admin/users - Create staff/admin
+- GET /api/admin/users - List all users
+- GET /api/admin/staff - List staff members
+- DELETE /api/admin/users/{id} - Delete user
+
+### Transcript Requests
 - POST /api/requests - Create transcript request (student)
 - GET /api/requests - Get user's requests (role-filtered)
+- GET /api/requests/all - Get all requests (admin/staff)
 - GET /api/requests/{id} - Get request details
 - PATCH /api/requests/{id} - Update request status
 - POST /api/requests/{id}/documents - Upload document
+- GET /api/documents/{id} - Download document
+
+### Notifications
 - GET /api/notifications - Get user notifications
+- GET /api/notifications/unread-count - Get unread count
 - PATCH /api/notifications/{id}/read - Mark as read
+- PATCH /api/notifications/read-all - Mark all as read
+
+### Analytics
 - GET /api/analytics - Get dashboard analytics (admin only)
