@@ -94,6 +94,11 @@ function AppRoutes() {
           <RequestDetail />
         </ProtectedRoute>
       } />
+      <Route path="/student/request/:id/edit" element={
+        <ProtectedRoute allowedRoles={['student']}>
+          <EditRequest />
+        </ProtectedRoute>
+      } />
       <Route path="/student/notifications" element={
         <ProtectedRoute allowedRoles={['student']}>
           <StudentNotifications />
