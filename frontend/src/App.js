@@ -12,6 +12,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import StudentDashboard from "@/pages/student/StudentDashboard";
 import NewRequest from "@/pages/student/NewRequest";
 import RequestDetail from "@/pages/student/RequestDetail";
+import EditRequest from "@/pages/student/EditRequest";
 import StudentNotifications from "@/pages/student/StudentNotifications";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRequests from "@/pages/admin/AdminRequests";
