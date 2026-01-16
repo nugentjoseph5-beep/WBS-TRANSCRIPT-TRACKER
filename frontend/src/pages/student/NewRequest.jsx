@@ -56,21 +56,21 @@ export default function NewRequest() {
       return;
     }
 
-    // Validate institution name for emailed/delivery methods
-    if ((formData.collection_method === 'emailed' || formData.collection_method === 'delivery') && !formData.institution_name) {
+    // Validate all institution fields are filled
+    if (!formData.institution_name) {
       toast.error('Please enter the institution name');
       return;
     }
-
-    // Validate institution email for emailed method
-    if (formData.collection_method === 'emailed' && !formData.institution_email) {
+    if (!formData.institution_address) {
+      toast.error('Please enter the institution address');
+      return;
+    }
+    if (!formData.institution_email) {
       toast.error('Please enter the institution email');
       return;
     }
-
-    // Validate institution address for delivery method
-    if (formData.collection_method === 'delivery' && !formData.institution_address) {
-      toast.error('Please enter the institution address');
+    if (!formData.institution_phone) {
+      toast.error('Please enter the institution phone number');
       return;
     }
 
@@ -339,76 +339,70 @@ export default function NewRequest() {
             </CardContent>
           </Card>
 
-          {/* Institution Details (shown for all collection methods) */}
+          {/* Institution Details - Always shown and mandatory */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="font-heading text-lg">Institution Details</CardTitle>
               <CardDescription>
-                {formData.collection_method === 'pickup' 
-                  ? 'Institution requesting the transcript (optional for pickup)'
-                  : 'Where should we send the transcript?'}
+                Where should we send the transcript? These details are required.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="institution_name">
-                  Institution Name {(formData.collection_method === 'emailed' || formData.collection_method === 'delivery') && '*'}
-                </Label>
+                <Label htmlFor="institution_name">Institution Name *</Label>
                 <Input
                   id="institution_name"
                   name="institution_name"
                   value={formData.institution_name}
                   onChange={handleChange}
-                  required={formData.collection_method === 'emailed' || formData.collection_method === 'delivery'}
+                  required
                   placeholder="e.g., University of the West Indies"
                   data-testid="institution-name-input"
                 />
               </div>
 
-              {formData.collection_method === 'delivery' && (
+              <div className="space-y-2">
+                <Label htmlFor="institution_address">Institution Address *</Label>
+                <Textarea
+                  id="institution_address"
+                  name="institution_address"
+                  value={formData.institution_address}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter full address including city and country"
+                  rows={3}
+                  data-testid="institution-address-input"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="institution_address">Institution Address *</Label>
-                  <Textarea
-                    id="institution_address"
-                    name="institution_address"
-                    value={formData.institution_address}
+                  <Label htmlFor="institution_email">Institution Email *</Label>
+                  <Input
+                    id="institution_email"
+                    name="institution_email"
+                    type="email"
+                    value={formData.institution_email}
                     onChange={handleChange}
-                    required={formData.collection_method === 'delivery'}
-                    placeholder="Enter full address including city and country"
-                    rows={3}
-                    data-testid="institution-address-input"
+                    required
+                    placeholder="admissions@university.edu"
+                    data-testid="institution-email-input"
                   />
                 </div>
-              )}
-
-              {(formData.collection_method === 'emailed' || formData.collection_method === 'delivery') && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="institution_phone">Institution Phone</Label>
-                    <Input
-                      id="institution_phone"
-                      name="institution_phone"
-                      type="tel"
-                      value={formData.institution_phone}
-                      onChange={handleChange}
-                      placeholder="+1 XXX XXX XXXX"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="institution_email">Institution Email {formData.collection_method === 'emailed' && '*'}</Label>
-                    <Input
-                      id="institution_email"
-                      name="institution_email"
-                      type="email"
-                      value={formData.institution_email}
-                      onChange={handleChange}
-                      required={formData.collection_method === 'emailed'}
-                      placeholder="admissions@university.edu"
-                      data-testid="institution-email-input"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="institution_phone">Institution Phone *</Label>
+                  <Input
+                    id="institution_phone"
+                    name="institution_phone"
+                    type="tel"
+                    value={formData.institution_phone}
+                    onChange={handleChange}
+                    required
+                    placeholder="+1 XXX XXX XXXX"
+                    data-testid="institution-phone-input"
+                  />
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
 
