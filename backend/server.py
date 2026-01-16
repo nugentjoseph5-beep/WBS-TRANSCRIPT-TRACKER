@@ -661,6 +661,72 @@ async def get_request(request_id: str, current_user: dict = Depends(get_current_
     
     return TranscriptRequestResponse(**request_doc)
 
+class StudentRequestUpdate(BaseModel):
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    last_name: Optional[str] = None
+    school_id: Optional[str] = None
+    enrollment_status: Optional[str] = None
+    academic_year: Optional[str] = None
+    wolmers_email: Optional[str] = None
+    personal_email: Optional[str] = None
+    phone_number: Optional[str] = None
+    reason: Optional[str] = None
+    needed_by_date: Optional[str] = None
+    collection_method: Optional[str] = None
+    institution_name: Optional[str] = None
+    institution_address: Optional[str] = None
+    institution_phone: Optional[str] = None
+    institution_email: Optional[str] = None
+
+@api_router.put("/requests/{request_id}/edit", response_model=TranscriptRequestResponse)
+async def student_edit_request(request_id: str, update_data: StudentRequestUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "student":
+        raise HTTPException(status_code=403, detail="Only students can edit their own requests")
+    
+    request_doc = await db.transcript_requests.find_one({"id": request_id}, {"_id": 0})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Check ownership
+    if request_doc["student_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You can only edit your own requests")
+    
+    # Check status - only pending requests can be edited
+    if request_doc["status"] != "Pending":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"This request cannot be edited because its status is '{request_doc['status']}'. Only pending requests can be modified."
+        )
+    
+    now = datetime.now(timezone.utc).isoformat()
+    updates = {"updated_at": now}
+    
+    # Update only provided fields
+    update_fields = update_data.dict(exclude_unset=True)
+    for field, value in update_fields.items():
+        if value is not None:
+            updates[field] = value
+    
+    # Add timeline entry for edit
+    timeline_entry = {
+        "status": "Pending",
+        "timestamp": now,
+        "note": "Request details updated by student",
+        "updated_by": current_user["full_name"]
+    }
+    
+    await db.transcript_requests.update_one(
+        {"id": request_id},
+        {
+            "$set": updates,
+            "$push": {"timeline": timeline_entry}
+        }
+    )
+    
+    updated_request = await db.transcript_requests.find_one({"id": request_id}, {"_id": 0})
+    return TranscriptRequestResponse(**updated_request)
+
 @api_router.patch("/requests/{request_id}", response_model=TranscriptRequestResponse)
 async def update_request(request_id: str, update_data: TranscriptRequestUpdate, current_user: dict = Depends(get_current_user)):
     if current_user["role"] == "student":
