@@ -62,6 +62,18 @@ export default function NewRequest() {
       return;
     }
 
+    // Validate institution email for emailed method
+    if (formData.collection_method === 'emailed' && !formData.institution_email) {
+      toast.error('Please enter the institution email');
+      return;
+    }
+
+    // Validate institution address for delivery method
+    if (formData.collection_method === 'delivery' && !formData.institution_address) {
+      toast.error('Please enter the institution address');
+      return;
+    }
+
     setLoading(true);
 
     try {
