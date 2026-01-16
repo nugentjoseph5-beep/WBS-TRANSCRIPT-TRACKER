@@ -99,9 +99,11 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/student" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-maroon-500 flex items-center justify-center">
-                <span className="font-heading text-gold-500 font-bold">W</span>
-              </div>
+              <img 
+                src="https://static.prod-images.emergentagent.com/jobs/13afcd2c-9b31-4868-9eb9-1450f0dbe963/images/7a745def6cecbed258ad447238bdd509434c8ac5c132a51fde220305ad9b582b.png" 
+                alt="Wolmer's Boys' School Crest" 
+                className="w-10 h-10 object-contain"
+              />
               <div className="hidden sm:block">
                 <h1 className="font-heading text-stone-900 font-semibold">Wolmer's</h1>
                 <p className="text-stone-500 text-xs">Transcript Tracker</p>
