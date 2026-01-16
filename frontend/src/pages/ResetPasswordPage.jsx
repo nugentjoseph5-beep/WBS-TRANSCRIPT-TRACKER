@@ -154,7 +154,7 @@ export default function ResetPasswordPage() {
 
         <div className="relative z-10">
           <blockquote className="text-xl text-white/90 font-light leading-relaxed mb-4">
-            "Age Quod Agis - Do well whatever you do"
+            "Age Quod Agis: Whatever you do, do it to the best of your ability"
           </blockquote>
           <p className="text-gold-400 text-sm">School Motto</p>
         </div>
