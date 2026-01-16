@@ -467,6 +467,9 @@ class WolmersTranscriptAPITester:
             # Try login if registration failed (user might already exist)
             self.test_student_login()
         
+        # Test password reset flow
+        self.test_password_reset_flow()
+        
         # User management tests
         if admin_login_success:
             self.test_create_staff_user()
@@ -479,6 +482,7 @@ class WolmersTranscriptAPITester:
         
         # Transcript request tests
         request_id = self.test_create_transcript_request()
+        self.test_transcript_request_with_institution()
         self.test_get_requests()
         
         # Notification tests
