@@ -24,7 +24,7 @@ export default function LandingPage() {
               {/* Logo */}
               <div className="flex items-center gap-3">
                 <img 
-                  src="https://static.prod-images.emergentagent.com/jobs/13afcd2c-9b31-4868-9eb9-1450f0dbe963/images/7a745def6cecbed258ad447238bdd509434c8ac5c132a51fde220305ad9b582b.png" 
+                  src="https://customer-assets.emergentagent.com/job_13afcd2c-9b31-4868-9eb9-1450f0dbe963/artifacts/iuukr0xo_Wolmer%27s_Schools.png" 
                   alt="Wolmer's Boys' School Crest" 
                   className="w-14 h-14 object-contain"
                 />
@@ -207,7 +207,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
               <img 
-                src="https://static.prod-images.emergentagent.com/jobs/13afcd2c-9b31-4868-9eb9-1450f0dbe963/images/7a745def6cecbed258ad447238bdd509434c8ac5c132a51fde220305ad9b582b.png" 
+                src="https://customer-assets.emergentagent.com/job_13afcd2c-9b31-4868-9eb9-1450f0dbe963/artifacts/iuukr0xo_Wolmer%27s_Schools.png" 
                 alt="Wolmer's Boys' School Crest" 
                 className="w-10 h-10 object-contain"
               />
