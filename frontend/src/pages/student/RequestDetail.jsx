@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { requestAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,11 +8,12 @@ import { formatDate, formatDateTime, getStatusBadgeClass, getStatusColor } from 
 import { toast } from 'sonner';
 import { 
   ArrowLeft, FileText, User, Mail, Phone, MapPin, 
-  Calendar, Clock, Building, Download, CheckCircle
+  Calendar, Clock, Building, Download, CheckCircle, Edit, AlertCircle
 } from 'lucide-react';
 
 export default function RequestDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -99,9 +100,24 @@ export default function RequestDetail() {
               Request ID: <span className="font-mono text-sm">{request.id.slice(0, 8)}</span>
             </p>
           </div>
-          <span className={`${getStatusBadgeClass(request.status)} text-sm px-4 py-1.5`}>
-            {request.status}
-          </span>
+          <div className="flex items-center gap-3">
+            {request.status === 'Pending' ? (
+              <Link to={`/student/request/${request.id}/edit`}>
+                <Button variant="outline" className="border-maroon-500 text-maroon-500 hover:bg-maroon-50" data-testid="edit-request-btn">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Request
+                </Button>
+              </Link>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-stone-500 bg-stone-100 px-3 py-1.5 rounded-md">
+                <AlertCircle className="h-4 w-4" />
+                <span>Cannot edit - Status: {request.status}</span>
+              </div>
+            )}
+            <span className={`${getStatusBadgeClass(request.status)} text-sm px-4 py-1.5`}>
+              {request.status}
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
