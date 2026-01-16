@@ -18,8 +18,10 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRequests from "@/pages/admin/AdminRequests";
 import AdminRequestDetail from "@/pages/admin/AdminRequestDetail";
 import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminNotifications from "@/pages/admin/AdminNotifications";
 import StaffDashboard from "@/pages/staff/StaffDashboard";
 import StaffRequestDetail from "@/pages/staff/StaffRequestDetail";
+import StaffNotifications from "@/pages/staff/StaffNotifications";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
