@@ -252,6 +252,48 @@ async def create_notification(user_id: str, title: str, message: str, notif_type
     await db.notifications.insert_one(notification)
     return notification
 
+async def check_and_notify_overdue_requests():
+    """Check for overdue requests and notify admins"""
+    now = datetime.now(timezone.utc)
+    today_str = now.strftime("%Y-%m-%d")
+    
+    # Find overdue requests that haven't been notified today
+    overdue_requests = await db.transcript_requests.find({
+        "needed_by_date": {"$lt": today_str},
+        "status": {"$nin": ["Completed", "Rejected"]},
+        "$or": [
+            {"overdue_notified_date": {"$exists": False}},
+            {"overdue_notified_date": {"$ne": today_str}}
+        ]
+    }).to_list(None)
+    
+    if not overdue_requests:
+        return
+    
+    # Get all admin users
+    admins = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(None)
+    
+    for req in overdue_requests:
+        try:
+            needed_date = datetime.strptime(req["needed_by_date"], "%Y-%m-%d")
+            days_overdue = (now.replace(tzinfo=None) - needed_date).days
+            
+            student_name = f"{req.get('first_name', '')} {req.get('last_name', '')}"
+            title = "⚠️ Overdue Transcript Request"
+            message = f"Request from {student_name} is {days_overdue} day(s) overdue. Needed by: {req['needed_by_date']}"
+            
+            # Notify all admins
+            for admin in admins:
+                await create_notification(admin["id"], title, message, "overdue", req["id"])
+            
+            # Mark as notified today
+            await db.transcript_requests.update_one(
+                {"id": req["id"]},
+                {"$set": {"overdue_notified_date": today_str}}
+            )
+        except Exception as e:
+            print(f"Error notifying overdue request: {e}")
+
 async def notify_status_change(request_data: dict, old_status: str, new_status: str):
     student = await db.users.find_one({"id": request_data["student_id"]}, {"_id": 0})
     if not student:
