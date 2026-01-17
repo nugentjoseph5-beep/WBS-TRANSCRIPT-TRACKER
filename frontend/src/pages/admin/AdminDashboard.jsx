@@ -12,10 +12,11 @@ import {
 } from 'recharts';
 import { 
   LayoutDashboard, FileText, Users, Bell, LogOut, Menu, X,
-  Clock, CheckCircle, AlertCircle, XCircle, TrendingUp
+  Clock, CheckCircle, AlertCircle, XCircle, TrendingUp, AlertTriangle, UserCheck
 } from 'lucide-react';
 
 const COLORS = ['#800000', '#FFD700', '#78716C', '#22c55e', '#3b82f6', '#ef4444'];
+const WORKLOAD_COLORS = ['#800000', '#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#06b6d4', '#78716c'];
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -53,6 +54,11 @@ export default function AdminDashboard() {
     navigate('/');
   };
 
+  // Navigate to requests with filter
+  const handleTileClick = (filter) => {
+    navigate(`/admin/requests?filter=${filter}`);
+  };
+
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/requests', icon: FileText, label: 'Requests' },
@@ -67,6 +73,9 @@ export default function AdminDashboard() {
     { name: 'Completed', value: analytics.completed_requests, color: '#22c55e' },
     { name: 'Rejected', value: analytics.rejected_requests, color: '#ef4444' },
   ].filter(item => item.value > 0) : [];
+
+  const staffWorkloadData = analytics?.staff_workload || [];
+  const overdueByDaysData = analytics?.overdue_by_days || [];
 
   return (
     <div className="flex h-screen bg-stone-50" data-testid="admin-dashboard">
@@ -186,9 +195,13 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <>
-              {/* Stats Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <Card>
+              {/* Stats Cards - Now Clickable */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-maroon-300"
+                  onClick={() => handleTileClick('all')}
+                  data-testid="tile-total"
+                >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -199,7 +212,11 @@ export default function AdminDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-yellow-300"
+                  onClick={() => handleTileClick('Pending')}
+                  data-testid="tile-pending"
+                >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -210,7 +227,11 @@ export default function AdminDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-green-300"
+                  onClick={() => handleTileClick('Completed')}
+                  data-testid="tile-completed"
+                >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -221,7 +242,11 @@ export default function AdminDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-red-300"
+                  onClick={() => handleTileClick('Rejected')}
+                  data-testid="tile-rejected"
+                >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -232,9 +257,26 @@ export default function AdminDashboard() {
                     </div>
                   </CardContent>
                 </Card>
+                <Card 
+                  className={`cursor-pointer hover:shadow-lg transition-shadow col-span-2 md:col-span-1 ${analytics?.overdue_requests > 0 ? 'border-orange-400 bg-orange-50' : ''}`}
+                  onClick={() => handleTileClick('overdue')}
+                  data-testid="tile-overdue"
+                >
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-stone-500">Overdue</p>
+                        <p className={`text-2xl md:text-3xl font-bold ${analytics?.overdue_requests > 0 ? 'text-orange-600' : 'text-stone-400'}`}>
+                          {analytics?.overdue_requests || 0}
+                        </p>
+                      </div>
+                      <AlertTriangle className={`h-8 w-8 md:h-10 md:w-10 ${analytics?.overdue_requests > 0 ? 'text-orange-500/40' : 'text-stone-300/20'}`} />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
-              {/* Charts */}
+              {/* Charts Row 1 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Status Distribution Pie Chart */}
                 <Card>
@@ -270,6 +312,40 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
+                {/* Staff Workload Bar Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg flex items-center gap-2">
+                      <UserCheck className="h-5 w-5 text-maroon-500" />
+                      Staff Workload
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {staffWorkloadData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={staffWorkloadData} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+                          <XAxis type="number" tick={{ fontSize: 12 }} />
+                          <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={100} />
+                          <Tooltip />
+                          <Bar dataKey="requests" fill="#800000" radius={[0, 4, 4, 0]}>
+                            {staffWorkloadData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.name === 'Unassigned' ? '#78716c' : WORKLOAD_COLORS[index % WORKLOAD_COLORS.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-stone-400">
+                        No assigned requests yet
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 2 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Monthly Trend Bar Chart */}
                 <Card>
                   <CardHeader>
@@ -297,6 +373,41 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
+                {/* Overdue Breakdown Chart */}
+                <Card className={overdueByDaysData.length > 0 ? 'border-orange-200' : ''}>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg flex items-center gap-2">
+                      <AlertTriangle className={`h-5 w-5 ${overdueByDaysData.length > 0 ? 'text-orange-500' : 'text-stone-400'}`} />
+                      Overdue Breakdown
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {overdueByDaysData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={overdueByDaysData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
+                          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip />
+                          <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                            {overdueByDaysData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex flex-col items-center justify-center text-stone-400">
+                        <CheckCircle className="h-12 w-12 text-green-500 mb-2" />
+                        <p>No overdue requests!</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 3 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 {/* Enrollment Status Pie */}
                 <Card>
                   <CardHeader>
@@ -386,7 +497,11 @@ export default function AdminDashboard() {
                         </thead>
                         <tbody>
                           {recentRequests.map((request) => (
-                            <tr key={request.id} className="border-b border-stone-100 hover:bg-stone-50">
+                            <tr 
+                              key={request.id} 
+                              className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
+                              onClick={() => navigate(`/admin/request/${request.id}`)}
+                            >
                               <td className="py-3 px-4">
                                 <p className="font-medium text-stone-900">{request.student_name}</p>
                                 <p className="text-xs text-stone-500">{request.student_email}</p>
