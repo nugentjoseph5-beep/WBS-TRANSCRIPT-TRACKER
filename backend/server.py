@@ -991,6 +991,9 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can view analytics")
     
+    # Check and notify about overdue requests
+    await check_and_notify_overdue_requests()
+    
     now = datetime.now(timezone.utc)
     today_str = now.strftime("%Y-%m-%d")
     
