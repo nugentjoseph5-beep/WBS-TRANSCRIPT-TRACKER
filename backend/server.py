@@ -173,9 +173,12 @@ class AnalyticsResponse(BaseModel):
     ready_requests: int
     completed_requests: int
     rejected_requests: int
+    overdue_requests: int
     requests_by_month: List[dict]
     requests_by_enrollment: List[dict]
     requests_by_collection_method: List[dict]
+    staff_workload: List[dict]
+    overdue_by_days: List[dict]
 
 # ==================== HELPER FUNCTIONS ====================
 
