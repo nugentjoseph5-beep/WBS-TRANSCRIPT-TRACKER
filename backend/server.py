@@ -949,6 +949,9 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admins can view analytics")
     
+    now = datetime.now(timezone.utc)
+    today_str = now.strftime("%Y-%m-%d")
+    
     # Use aggregation pipeline for optimized queries
     pipeline = [
         {
@@ -964,12 +967,42 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
                 ],
                 "total": [
                     {"$count": "count"}
+                ],
+                "staff_workload": [
+                    {"$match": {"assigned_staff_id": {"$ne": None}}},
+                    {"$group": {"_id": "$assigned_staff_id", "count": {"$sum": 1}}}
                 ]
             }
         }
     ]
     
     result = await db.transcript_requests.aggregate(pipeline).to_list(1)
+    
+    # Calculate overdue requests (needed_by_date < today and status not Completed/Rejected)
+    overdue_requests = await db.transcript_requests.find({
+        "needed_by_date": {"$lt": today_str},
+        "status": {"$nin": ["Completed", "Rejected"]}
+    }).to_list(None)
+    overdue_count = len(overdue_requests)
+    
+    # Calculate overdue by days categories
+    overdue_by_days = {"1-3 days": 0, "4-7 days": 0, "8-14 days": 0, "15+ days": 0}
+    for req in overdue_requests:
+        try:
+            needed_date = datetime.strptime(req["needed_by_date"], "%Y-%m-%d")
+            days_overdue = (now.replace(tzinfo=None) - needed_date).days
+            if days_overdue <= 3:
+                overdue_by_days["1-3 days"] += 1
+            elif days_overdue <= 7:
+                overdue_by_days["4-7 days"] += 1
+            elif days_overdue <= 14:
+                overdue_by_days["8-14 days"] += 1
+            else:
+                overdue_by_days["15+ days"] += 1
+        except:
+            pass
+    
+    overdue_by_days_list = [{"name": k, "value": v, "color": "#ef4444" if "15+" in k else "#f97316" if "8-14" in k else "#eab308" if "4-7" in k else "#fbbf24"} for k, v in overdue_by_days.items() if v > 0]
     
     # Parse aggregation results
     if result:
@@ -1002,6 +1035,22 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
             {"name": "Emailed to Institution", "value": collection_map.get("emailed", 0)},
             {"name": "Physical Delivery", "value": collection_map.get("delivery", 0)}
         ]
+        
+        # Parse staff workload
+        staff_workload_map = {item["_id"]: item["count"] for item in data["staff_workload"]}
+        staff_workload = []
+        for staff_id, count in staff_workload_map.items():
+            staff = await db.users.find_one({"id": staff_id})
+            staff_name = staff["full_name"] if staff else "Unknown"
+            staff_workload.append({"name": staff_name, "requests": count})
+        
+        # Add unassigned count
+        unassigned_count = await db.transcript_requests.count_documents({
+            "$or": [{"assigned_staff_id": None}, {"assigned_staff_id": {"$exists": False}}]
+        })
+        if unassigned_count > 0:
+            staff_workload.append({"name": "Unassigned", "requests": unassigned_count})
+        
     else:
         total = pending = in_progress = processing = ready = completed = rejected = 0
         requests_by_enrollment = [
@@ -1014,9 +1063,9 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
             {"name": "Emailed to Institution", "value": 0},
             {"name": "Physical Delivery", "value": 0}
         ]
+        staff_workload = []
     
     # Requests by month (last 6 months) - using aggregation
-    now = datetime.now(timezone.utc)
     requests_by_month = []
     
     for i in range(5, -1, -1):
@@ -1042,9 +1091,12 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
         ready_requests=ready,
         completed_requests=completed,
         rejected_requests=rejected,
+        overdue_requests=overdue_count,
         requests_by_month=requests_by_month,
         requests_by_enrollment=requests_by_enrollment,
-        requests_by_collection_method=requests_by_collection_method
+        requests_by_collection_method=requests_by_collection_method,
+        staff_workload=staff_workload,
+        overdue_by_days=overdue_by_days_list
     )
 
 # ==================== HEALTH CHECK ====================
