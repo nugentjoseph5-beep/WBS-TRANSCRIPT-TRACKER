@@ -54,11 +54,16 @@ A comprehensive transcript request tracking system for Wolmer's Boys' School wit
 
 ### Frontend - Admin Portal
 - ✅ Dashboard with analytics charts (pie, bar)
+- ✅ **New Charts**: Staff Workload bar chart, Overdue Breakdown chart
+- ✅ **Clickable Summary Tiles**: Total, Pending, Completed, Rejected, Overdue - click to filter requests
 - ✅ Request management with staff assignment
+- ✅ **Advanced Filtering**: Filter by status (including Overdue), staff assigned, search by name/email/institution
+- ✅ **Sortable Columns**: Sort requests by Student, Status, Submitted Date, Needed By date
 - ✅ User management (create staff/admin, delete users)
 - ✅ Sidebar navigation
 - ✅ **Request Detail View**: Full details of any transcript request with ability to update status, reassign staff, reject requests, and upload documents
 - ✅ **Notifications page**: View and manage notifications via bell icon in header
+- ✅ **Overdue Notifications**: Admins automatically notified about overdue transcript requests
 
 ### Frontend - Staff Portal
 - ✅ Dashboard with assigned requests
