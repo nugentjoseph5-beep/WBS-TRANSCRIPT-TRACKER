@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { requestAPI, userAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,13 +12,15 @@ import { formatDate, getStatusBadgeClass } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
   LayoutDashboard, FileText, Users, LogOut, Menu, X,
-  Search, Filter, ChevronRight, UserPlus, Loader2
+  Search, Filter, ChevronRight, UserPlus, Loader2, ArrowUpDown,
+  ArrowUp, ArrowDown, AlertTriangle, Calendar
 } from 'lucide-react';
 
 export default function AdminRequests() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [requests, setRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [staffMembers, setStaffMembers] = useState([]);
@@ -26,6 +28,9 @@ export default function AdminRequests() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [staffFilter, setStaffFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState('');
@@ -35,9 +40,23 @@ export default function AdminRequests() {
     fetchData();
   }, []);
 
+  // Handle URL filter parameter from dashboard tiles
   useEffect(() => {
-    filterRequests();
-  }, [requests, searchTerm, statusFilter]);
+    const filterParam = searchParams.get('filter');
+    if (filterParam) {
+      if (filterParam === 'all') {
+        setStatusFilter('all');
+      } else if (filterParam === 'overdue') {
+        setStatusFilter('overdue');
+      } else {
+        setStatusFilter(filterParam);
+      }
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    filterAndSortRequests();
+  }, [requests, searchTerm, statusFilter, staffFilter, sortBy, sortOrder]);
 
   const fetchData = async () => {
     try {
@@ -54,23 +73,84 @@ export default function AdminRequests() {
     }
   };
 
-  const filterRequests = () => {
+  const isOverdue = (request) => {
+    if (request.status === 'Completed' || request.status === 'Rejected') return false;
+    const neededDate = new Date(request.needed_by_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return neededDate < today;
+  };
+
+  const filterAndSortRequests = () => {
     let filtered = [...requests];
 
+    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(r => 
         r.student_name.toLowerCase().includes(term) ||
         r.student_email.toLowerCase().includes(term) ||
-        r.school_id.toLowerCase().includes(term)
+        r.school_id.toLowerCase().includes(term) ||
+        (r.institution_name && r.institution_name.toLowerCase().includes(term))
       );
     }
 
-    if (statusFilter !== 'all') {
+    // Status filter
+    if (statusFilter === 'overdue') {
+      filtered = filtered.filter(r => isOverdue(r));
+    } else if (statusFilter !== 'all') {
       filtered = filtered.filter(r => r.status === statusFilter);
     }
 
+    // Staff filter
+    if (staffFilter === 'unassigned') {
+      filtered = filtered.filter(r => !r.assigned_staff_id);
+    } else if (staffFilter !== 'all') {
+      filtered = filtered.filter(r => r.assigned_staff_id === staffFilter);
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal, bVal;
+      
+      if (sortBy === 'created_at' || sortBy === 'needed_by_date') {
+        aVal = new Date(a[sortBy]);
+        bVal = new Date(b[sortBy]);
+      } else if (sortBy === 'student_name') {
+        aVal = a.student_name.toLowerCase();
+        bVal = b.student_name.toLowerCase();
+      } else if (sortBy === 'status') {
+        const statusOrder = ['Pending', 'In Progress', 'Processing', 'Ready', 'Completed', 'Rejected'];
+        aVal = statusOrder.indexOf(a.status);
+        bVal = statusOrder.indexOf(b.status);
+      } else {
+        aVal = a[sortBy];
+        bVal = b[sortBy];
+      }
+      
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      }
+      return aVal < bVal ? 1 : -1;
+    });
+
     setFilteredRequests(filtered);
+  };
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (sortBy !== field) return <ArrowUpDown className="h-4 w-4 text-stone-400" />;
+    return sortOrder === 'asc' 
+      ? <ArrowUp className="h-4 w-4 text-maroon-500" />
+      : <ArrowDown className="h-4 w-4 text-maroon-500" />;
   };
 
   const handleAssignStaff = async () => {
@@ -96,11 +176,22 @@ export default function AdminRequests() {
     navigate('/');
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setStaffFilter('all');
+    setSortBy('created_at');
+    setSortOrder('desc');
+    setSearchParams({});
+  };
+
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/requests', icon: FileText, label: 'Requests' },
     { path: '/admin/users', icon: Users, label: 'Users' },
   ];
+
+  const hasActiveFilters = searchTerm || statusFilter !== 'all' || staffFilter !== 'all';
 
   return (
     <div className="flex h-screen bg-stone-50" data-testid="admin-requests-page">
@@ -127,7 +218,8 @@ export default function AdminRequests() {
 
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive = location.pathname.startsWith(item.path) && 
+                (item.path === '/admin/requests' || location.pathname === item.path);
               return (
                 <Link
                   key={item.path}
@@ -180,40 +272,78 @@ export default function AdminRequests() {
             </button>
             <div>
               <h1 className="font-heading text-xl md:text-2xl font-bold text-stone-900">All Requests</h1>
-              <p className="text-stone-500 text-sm hidden md:block">Manage transcript requests</p>
+              <p className="text-stone-500 text-sm hidden md:block">
+                {filteredRequests.length} request{filteredRequests.length !== 1 ? 's' : ''}
+                {hasActiveFilters && ' (filtered)'}
+              </p>
             </div>
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-              <Input
-                placeholder="Search by name, email, or school ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-                data-testid="search-input"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48" data-testid="status-filter">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Processing">Processing</SelectItem>
-                <SelectItem value="Ready">Ready</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
-                <SelectItem value="Rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {/* Search */}
+                <div className="relative lg:col-span-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-stone-400" />
+                  <Input
+                    placeholder="Search by name, email, school ID, or institution..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                    data-testid="search-input"
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger data-testid="status-filter">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Processing">Processing</SelectItem>
+                    <SelectItem value="Ready">Ready</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                    <SelectItem value="overdue">
+                      <span className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-orange-500" />
+                        Overdue
+                      </span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Staff Filter */}
+                <Select value={staffFilter} onValueChange={setStaffFilter}>
+                  <SelectTrigger data-testid="staff-filter">
+                    <SelectValue placeholder="Assigned Staff" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Staff</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {staffMembers.map(staff => (
+                      <SelectItem key={staff.id} value={staff.id}>
+                        {staff.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <Button variant="outline" onClick={clearFilters} className="w-full">
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Requests Table */}
           <Card>
@@ -221,97 +351,132 @@ export default function AdminRequests() {
               {loading ? (
                 <div className="p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maroon-500 mx-auto"></div>
+                  <p className="text-stone-500 mt-4">Loading requests...</p>
                 </div>
               ) : filteredRequests.length === 0 ? (
-                <div className="p-8 text-center text-stone-400">
-                  {searchTerm || statusFilter !== 'all' ? 'No requests match your filters' : 'No requests yet'}
+                <div className="p-8 text-center">
+                  <FileText className="h-12 w-12 text-stone-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-stone-900 mb-2">No requests found</h3>
+                  <p className="text-stone-500">
+                    {hasActiveFilters ? 'Try adjusting your filters' : 'No transcript requests have been submitted yet'}
+                  </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-stone-200 bg-stone-50">
-                        <th className="text-left py-3 px-4 font-medium text-stone-500">Student</th>
-                        <th className="text-left py-3 px-4 font-medium text-stone-500">School ID</th>
+                        <th 
+                          className="text-left py-3 px-4 font-medium text-stone-500 cursor-pointer hover:text-stone-700"
+                          onClick={() => handleSort('student_name')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Student
+                            {getSortIcon('student_name')}
+                          </div>
+                        </th>
                         <th className="text-left py-3 px-4 font-medium text-stone-500">Institution</th>
-                        <th className="text-left py-3 px-4 font-medium text-stone-500">Status</th>
                         <th className="text-left py-3 px-4 font-medium text-stone-500">Assigned To</th>
-                        <th className="text-left py-3 px-4 font-medium text-stone-500">Date</th>
+                        <th 
+                          className="text-left py-3 px-4 font-medium text-stone-500 cursor-pointer hover:text-stone-700"
+                          onClick={() => handleSort('status')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Status
+                            {getSortIcon('status')}
+                          </div>
+                        </th>
+                        <th 
+                          className="text-left py-3 px-4 font-medium text-stone-500 cursor-pointer hover:text-stone-700"
+                          onClick={() => handleSort('created_at')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Submitted
+                            {getSortIcon('created_at')}
+                          </div>
+                        </th>
+                        <th 
+                          className="text-left py-3 px-4 font-medium text-stone-500 cursor-pointer hover:text-stone-700"
+                          onClick={() => handleSort('needed_by_date')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Needed By
+                            {getSortIcon('needed_by_date')}
+                          </div>
+                        </th>
                         <th className="text-left py-3 px-4 font-medium text-stone-500">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRequests.map((request) => (
-                        <tr 
-                          key={request.id} 
-                          className="border-b border-stone-100 hover:bg-stone-50"
-                          data-testid={`request-row-${request.id}`}
-                        >
-                          <td className="py-3 px-4">
-                            <p className="font-medium text-stone-900">{request.student_name}</p>
-                            <p className="text-xs text-stone-500">{request.school_id} • {request.academic_year}</p>
-                          </td>
-                          <td className="py-3 px-4 text-stone-600">{request.school_id}</td>
-                          <td className="py-3 px-4">
-                            {request.institution_name ? (
-                              <div>
-                                <p className="text-stone-900 font-medium">{request.institution_name}</p>
-                                <p className="text-xs text-stone-500 capitalize">{request.collection_method}</p>
-                              </div>
-                            ) : (
-                              <span className="text-stone-400 text-sm">—</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={getStatusBadgeClass(request.status)}>
-                              {request.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {request.assigned_staff_name ? (
-                              <div className="flex items-center gap-2">
-                                <span className="text-stone-600">{request.assigned_staff_name}</span>
+                      {filteredRequests.map((request) => {
+                        const overdue = isOverdue(request);
+                        return (
+                          <tr 
+                            key={request.id} 
+                            className={`border-b border-stone-100 hover:bg-stone-50 ${overdue ? 'bg-orange-50' : ''}`}
+                          >
+                            <td className="py-3 px-4">
+                              <p className="font-medium text-stone-900">{request.student_name}</p>
+                              <p className="text-xs text-stone-500">{request.school_id}</p>
+                            </td>
+                            <td className="py-3 px-4">
+                              <p className="text-stone-700 truncate max-w-[150px]" title={request.institution_name}>
+                                {request.institution_name || '-'}
+                              </p>
+                            </td>
+                            <td className="py-3 px-4">
+                              {request.assigned_staff_name ? (
+                                <span className="text-stone-700">{request.assigned_staff_name}</span>
+                              ) : (
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 w-6 p-0 text-stone-400 hover:text-maroon-500"
-                                  onClick={() => {
+                                  className="text-maroon-500 hover:text-maroon-600 p-0 h-auto"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     setSelectedRequest(request);
                                     setSelectedStaff(request.assigned_staff_id || '');
                                     setAssignDialogOpen(true);
                                   }}
-                                  data-testid={`reassign-btn-${request.id}`}
-                                  title="Reassign"
+                                  data-testid={`assign-btn-${request.id}`}
                                 >
-                                  <UserPlus className="h-3 w-3" />
+                                  <UserPlus className="h-4 w-4 mr-1" />
+                                  Assign
                                 </Button>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2">
+                                <span className={getStatusBadgeClass(request.status)}>
+                                  {request.status}
+                                </span>
+                                {overdue && (
+                                  <span className="flex items-center gap-1 text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">
+                                    <AlertTriangle className="h-3 w-3" />
+                                    Overdue
+                                  </span>
+                                )}
                               </div>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedRequest(request);
-                                  setSelectedStaff('');
-                                  setAssignDialogOpen(true);
-                                }}
-                                data-testid={`assign-btn-${request.id}`}
-                              >
-                                <UserPlus className="h-4 w-4 mr-1" />
-                                Assign
-                              </Button>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-stone-500">{formatDate(request.created_at)}</td>
-                          <td className="py-3 px-4">
-                            <Link to={`/admin/request/${request.id}`}>
-                              <Button variant="ghost" size="sm" data-testid={`view-detail-btn-${request.id}`}>
-                                <ChevronRight className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="py-3 px-4 text-stone-500">
+                              {formatDate(request.created_at)}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className={`flex items-center gap-1 ${overdue ? 'text-orange-600 font-medium' : 'text-stone-500'}`}>
+                                {overdue && <Calendar className="h-3 w-3" />}
+                                {formatDate(request.needed_by_date)}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <Link to={`/admin/request/${request.id}`}>
+                                <Button variant="ghost" size="sm" data-testid={`view-detail-btn-${request.id}`}>
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -325,43 +490,36 @@ export default function AdminRequests() {
       <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-heading">
-              {selectedRequest?.assigned_staff_id ? 'Reassign Staff Member' : 'Assign Staff Member'}
-            </DialogTitle>
+            <DialogTitle className="font-heading">Assign Staff Member</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            {selectedRequest?.assigned_staff_name && (
-              <p className="text-sm text-stone-500 mb-4">
-                Currently assigned to: <strong>{selectedRequest.assigned_staff_name}</strong>
-              </p>
+            {selectedRequest && (
+              <div className="mb-4 p-3 bg-stone-50 rounded-lg">
+                <p className="font-medium">{selectedRequest.student_name}</p>
+                <p className="text-sm text-stone-500">{selectedRequest.school_id} • {selectedRequest.academic_year}</p>
+              </div>
             )}
             <Label>Select Staff Member</Label>
             <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-              <SelectTrigger className="mt-2" data-testid="staff-select">
+              <SelectTrigger className="mt-2" data-testid="assign-staff-select">
                 <SelectValue placeholder="Choose a staff member" />
               </SelectTrigger>
               <SelectContent>
-                {staffMembers.map((staff) => (
+                {staffMembers.map(staff => (
                   <SelectItem key={staff.id} value={staff.id}>
                     {staff.full_name}
-                    {staff.id === selectedRequest?.assigned_staff_id && ' (current)'}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {staffMembers.length === 0 && (
-              <p className="text-sm text-stone-500 mt-2">
-                No staff members available. <Link to="/admin/users" className="text-maroon-500 hover:underline">Add staff members</Link>
-              </p>
-            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
-              onClick={handleAssignStaff} 
-              disabled={!selectedStaff || assigning}
+              onClick={handleAssignStaff}
+              disabled={assigning || !selectedStaff}
               className="bg-maroon-500 hover:bg-maroon-600"
               data-testid="confirm-assign-btn"
             >
