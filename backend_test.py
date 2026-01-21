@@ -57,6 +57,8 @@ class WolmersTranscriptAPITester:
                     response = requests.post(url, headers=headers, files=files, data=data)
                 else:
                     response = requests.post(url, headers=headers, json=data)
+            elif method == 'PUT':
+                response = requests.put(url, headers=headers, json=data)
             elif method == 'PATCH':
                 response = requests.patch(url, headers=headers, json=data)
             elif method == 'DELETE':
