@@ -929,6 +929,19 @@ class WolmersTranscriptAPITester:
         self.test_request_reassignment()  # New test
         self.test_get_requests()
         
+        # Recommendation letter request tests (NEW - Priority)
+        print("\n" + "🎯" * 20)
+        print("🎯 RECOMMENDATION LETTER TESTS (PRIORITY)")
+        print("🎯" * 20)
+        
+        rec_request_id = self.test_create_recommendation_request()
+        self.test_get_recommendation_requests()
+        self.test_get_specific_recommendation_request(rec_request_id)
+        self.test_update_recommendation_request_status(rec_request_id)
+        self.test_student_edit_recommendation_request(rec_request_id)
+        self.test_recommendation_request_permissions()
+        self.test_recommendation_request_validation()
+        
         # Notification tests
         self.test_notifications()
         
