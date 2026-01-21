@@ -90,14 +90,29 @@ function AppRoutes() {
           <StudentDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/student/select-service" element={
+        <ProtectedRoute allowedRoles={['student']}>
+          <ServiceSelection />
+        </ProtectedRoute>
+      } />
       <Route path="/student/new-request" element={
         <ProtectedRoute allowedRoles={['student']}>
           <NewRequest />
         </ProtectedRoute>
       } />
+      <Route path="/student/new-recommendation" element={
+        <ProtectedRoute allowedRoles={['student']}>
+          <NewRecommendation />
+        </ProtectedRoute>
+      } />
       <Route path="/student/request/:id" element={
         <ProtectedRoute allowedRoles={['student']}>
           <RequestDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/student/recommendation/:id" element={
+        <ProtectedRoute allowedRoles={['student']}>
+          <RecommendationDetail />
         </ProtectedRoute>
       } />
       <Route path="/student/request/:id/edit" element={
