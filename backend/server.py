@@ -1020,6 +1020,299 @@ async def get_document(document_id: str, current_user: dict = Depends(get_curren
         "content": content
     }
 
+# ==================== RECOMMENDATION LETTER REQUESTS ====================
+
+@api_router.post("/recommendations", response_model=RecommendationRequestResponse)
+async def create_recommendation_request(request_data: RecommendationRequestCreate, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "student":
+        raise HTTPException(status_code=403, detail="Only students can create recommendation letter requests")
+    
+    request_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    timeline_entry = {
+        "status": "Pending",
+        "timestamp": now,
+        "note": "Request submitted",
+        "updated_by": current_user["full_name"]
+    }
+    
+    doc = {
+        "id": request_id,
+        "student_id": current_user["id"],
+        "student_name": current_user["full_name"],
+        "student_email": current_user["email"],
+        "first_name": request_data.first_name,
+        "middle_name": request_data.middle_name or "",
+        "last_name": request_data.last_name,
+        "email": request_data.email,
+        "phone_number": request_data.phone_number,
+        "address": request_data.address,
+        "years_attended": request_data.years_attended,
+        "last_form_class": request_data.last_form_class,
+        "institution_name": request_data.institution_name,
+        "institution_address": request_data.institution_address,
+        "directed_to": request_data.directed_to or "",
+        "program_name": request_data.program_name,
+        "needed_by_date": request_data.needed_by_date,
+        "collection_method": request_data.collection_method,
+        "status": "Pending",
+        "assigned_staff_id": None,
+        "assigned_staff_name": None,
+        "rejection_reason": None,
+        "staff_notes": None,
+        "documents": [],
+        "timeline": [timeline_entry],
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.recommendation_requests.insert_one(doc)
+    
+    # Notify admins
+    admins = await db.users.find({"role": "admin"}, {"_id": 0}).to_list(100)
+    for admin in admins:
+        await create_notification(
+            admin["id"],
+            "New Recommendation Letter Request",
+            f"New recommendation letter request from {current_user['full_name']}",
+            "new_recommendation",
+            request_id
+        )
+    
+    return RecommendationRequestResponse(**doc)
+
+@api_router.get("/recommendations", response_model=List[RecommendationRequestResponse])
+async def get_recommendation_requests(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] == "student":
+        # Students can only see their own requests
+        requests = await db.recommendation_requests.find(
+            {"student_id": current_user["id"]},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(1000)
+    elif current_user["role"] == "staff":
+        # Staff can see assigned requests
+        requests = await db.recommendation_requests.find(
+            {"assigned_staff_id": current_user["id"]},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(1000)
+    else:
+        # Admin can see all requests
+        requests = await db.recommendation_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    return [RecommendationRequestResponse(**r) for r in requests]
+
+@api_router.get("/recommendations/all", response_model=List[RecommendationRequestResponse])
+async def get_all_recommendation_requests(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "staff"]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    requests = await db.recommendation_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [RecommendationRequestResponse(**r) for r in requests]
+
+@api_router.get("/recommendations/{request_id}", response_model=RecommendationRequestResponse)
+async def get_recommendation_request(request_id: str, current_user: dict = Depends(get_current_user)):
+    request_doc = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Check permissions
+    if current_user["role"] == "student" and request_doc["student_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You can only view your own requests")
+    
+    return RecommendationRequestResponse(**request_doc)
+
+@api_router.put("/recommendations/{request_id}/edit", response_model=RecommendationRequestResponse)
+async def student_edit_recommendation(request_id: str, update_data: StudentRecommendationUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "student":
+        raise HTTPException(status_code=403, detail="Only students can edit their own requests")
+    
+    request_doc = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Check ownership
+    if request_doc["student_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You can only edit your own requests")
+    
+    # Check status - only pending requests can be edited
+    if request_doc["status"] != "Pending":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"This request cannot be edited because its status is '{request_doc['status']}'. Only pending requests can be modified."
+        )
+    
+    now = datetime.now(timezone.utc).isoformat()
+    updates = {"updated_at": now}
+    
+    # Update only provided fields
+    update_fields = update_data.dict(exclude_unset=True)
+    for field, value in update_fields.items():
+        if value is not None:
+            updates[field] = value
+    
+    # Add timeline entry for edit
+    timeline_entry = {
+        "status": "Pending",
+        "timestamp": now,
+        "note": "Request details updated by student",
+        "updated_by": current_user["full_name"]
+    }
+    
+    await db.recommendation_requests.update_one(
+        {"id": request_id},
+        {
+            "$set": updates,
+            "$push": {"timeline": timeline_entry}
+        }
+    )
+    
+    updated_request = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
+    return RecommendationRequestResponse(**updated_request)
+
+@api_router.patch("/recommendations/{request_id}", response_model=RecommendationRequestResponse)
+async def update_recommendation_request(request_id: str, update_data: RecommendationRequestUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] == "student":
+        raise HTTPException(status_code=403, detail="Students cannot update request status")
+    
+    request_doc = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    updates = {"updated_at": now}
+    
+    old_status = request_doc["status"]
+    
+    if update_data.status:
+        updates["status"] = update_data.status
+        timeline_entry = {
+            "status": update_data.status,
+            "timestamp": now,
+            "note": f"Status changed to {update_data.status}",
+            "updated_by": current_user["full_name"]
+        }
+        await db.recommendation_requests.update_one(
+            {"id": request_id},
+            {"$push": {"timeline": timeline_entry}}
+        )
+    
+    if update_data.assigned_staff_id:
+        staff = await db.users.find_one({"id": update_data.assigned_staff_id}, {"_id": 0})
+        if staff:
+            updates["assigned_staff_id"] = update_data.assigned_staff_id
+            updates["assigned_staff_name"] = staff["full_name"]
+            # Notify staff
+            await create_notification(
+                staff["id"],
+                "New Recommendation Assignment",
+                f"You have been assigned a recommendation letter request",
+                "recommendation_assignment",
+                request_id
+            )
+    
+    if update_data.rejection_reason:
+        updates["rejection_reason"] = update_data.rejection_reason
+        updates["status"] = "Rejected"
+        timeline_entry = {
+            "status": "Rejected",
+            "timestamp": now,
+            "note": f"Request rejected: {update_data.rejection_reason}",
+            "updated_by": current_user["full_name"]
+        }
+        await db.recommendation_requests.update_one(
+            {"id": request_id},
+            {"$push": {"timeline": timeline_entry}}
+        )
+    
+    if update_data.staff_notes:
+        updates["staff_notes"] = update_data.staff_notes
+    
+    await db.recommendation_requests.update_one({"id": request_id}, {"$set": updates})
+    
+    # Notify student of status change
+    if update_data.status and update_data.status != old_status:
+        student = await db.users.find_one({"id": request_doc["student_id"]}, {"_id": 0})
+        if student:
+            title = "Recommendation Request Status Updated"
+            message = f"Your recommendation letter request has been updated from '{old_status}' to '{update_data.status}'."
+            await create_notification(student["id"], title, message, "recommendation_status_update", request_id)
+    
+    updated_request = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
+    return RecommendationRequestResponse(**updated_request)
+
+@api_router.post("/recommendations/{request_id}/documents")
+async def upload_recommendation_document(request_id: str, file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["admin", "staff"]:
+        raise HTTPException(status_code=403, detail="Only staff and admin can upload documents")
+    
+    request_doc = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Validate file type
+    allowed_types = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/jpeg",
+        "image/png",
+        "image/gif"
+    ]
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="File type not allowed")
+    
+    # Save file
+    file_id = str(uuid.uuid4())
+    file_ext = Path(file.filename).suffix
+    file_path = UPLOAD_DIR / f"{file_id}{file_ext}"
+    
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
+    
+    now = datetime.now(timezone.utc).isoformat()
+    doc_entry = {
+        "id": file_id,
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "path": str(file_path),
+        "uploaded_by": current_user["full_name"],
+        "uploaded_at": now
+    }
+    
+    await db.recommendation_requests.update_one(
+        {"id": request_id},
+        {
+            "$push": {"documents": doc_entry},
+            "$set": {"updated_at": now}
+        }
+    )
+    
+    # Add timeline entry
+    timeline_entry = {
+        "status": request_doc["status"],
+        "timestamp": now,
+        "note": f"Document uploaded: {file.filename}",
+        "updated_by": current_user["full_name"]
+    }
+    await db.recommendation_requests.update_one(
+        {"id": request_id},
+        {"$push": {"timeline": timeline_entry}}
+    )
+    
+    # Notify student
+    await create_notification(
+        request_doc["student_id"],
+        "Document Uploaded",
+        f"A document has been uploaded to your recommendation letter request",
+        "recommendation_document",
+        request_id
+    )
+    
+    return {"message": "Document uploaded successfully", "document": doc_entry}
+
 # ==================== NOTIFICATIONS ====================
 
 @api_router.get("/notifications", response_model=List[NotificationResponse])
