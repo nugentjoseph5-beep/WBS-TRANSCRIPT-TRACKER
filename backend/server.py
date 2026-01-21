@@ -1494,6 +1494,11 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
             "count": count
         })
     
+    # Get recommendation letter stats
+    total_rec = await db.recommendation_requests.count_documents({})
+    pending_rec = await db.recommendation_requests.count_documents({"status": "Pending"})
+    completed_rec = await db.recommendation_requests.count_documents({"status": "Completed"})
+    
     return AnalyticsResponse(
         total_requests=total,
         pending_requests=pending,
@@ -1507,14 +1512,17 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
         requests_by_enrollment=requests_by_enrollment,
         requests_by_collection_method=requests_by_collection_method,
         staff_workload=staff_workload,
-        overdue_by_days=overdue_by_days_list
+        overdue_by_days=overdue_by_days_list,
+        total_recommendation_requests=total_rec,
+        pending_recommendation_requests=pending_rec,
+        completed_recommendation_requests=completed_rec
     )
 
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
 async def root():
-    return {"message": "Wolmer's Transcript Tracker API", "status": "running"}
+    return {"message": "WBS Transcript and Recommendation Tracker API", "status": "running"}
 
 @api_router.get("/health")
 async def health_check():
