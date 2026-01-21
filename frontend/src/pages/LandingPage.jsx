@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { FileText, Users, Shield, ArrowRight } from 'lucide-react';
+import { FileText, Users, Shield, ArrowRight, Award } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -62,14 +62,14 @@ export default function LandingPage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-32">
           <div className="max-w-2xl">
             <span className="inline-block px-4 py-1.5 rounded-full bg-gold-500/20 text-gold-400 text-sm font-medium mb-6">
-              Transcript Request System
+              WBS Transcript & Recommendation Tracker
             </span>
             <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white font-bold leading-tight mb-6">
-              Request Your Academic Transcripts Online
+              Request Transcripts & Recommendation Letters Online
             </h2>
             <p className="text-white/80 text-lg mb-8 leading-relaxed">
               A streamlined system for current students, graduates, and alumni to request and track 
-              their academic transcripts from Wolmer's Boys' School.
+              their academic transcripts and recommendation letters from Wolmer's Boys' School.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/register">
@@ -96,28 +96,41 @@ export default function LandingPage() {
               How It Works
             </h3>
             <p className="text-stone-600 text-lg max-w-2xl mx-auto">
-              Our transcript request system is designed to make the process simple and transparent.
+              Our system is designed to make requesting transcripts and recommendation letters simple and transparent.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-6">
             {/* Feature 1 */}
             <div className="bg-white rounded-lg p-8 shadow-sm border border-stone-200 card-hover">
               <div className="w-14 h-14 rounded-lg bg-maroon-500/10 flex items-center justify-center mb-6">
                 <FileText className="h-7 w-7 text-maroon-500" />
               </div>
               <h4 className="font-heading text-xl font-semibold text-stone-900 mb-3">
-                Submit Request
+                Request Transcript
               </h4>
               <p className="text-stone-600 leading-relaxed">
-                Fill out the online transcript request form with your details and specify how you'd like to receive your transcript.
+                Fill out the online transcript request form with your details and specify your delivery preference.
               </p>
             </div>
 
             {/* Feature 2 */}
             <div className="bg-white rounded-lg p-8 shadow-sm border border-stone-200 card-hover">
               <div className="w-14 h-14 rounded-lg bg-gold-500/20 flex items-center justify-center mb-6">
-                <Users className="h-7 w-7 text-gold-600" />
+                <Award className="h-7 w-7 text-gold-600" />
+              </div>
+              <h4 className="font-heading text-xl font-semibold text-stone-900 mb-3">
+                Request Recommendation
+              </h4>
+              <p className="text-stone-600 leading-relaxed">
+                Submit a recommendation letter request for university applications or employment.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="bg-white rounded-lg p-8 shadow-sm border border-stone-200 card-hover">
+              <div className="w-14 h-14 rounded-lg bg-blue-100 flex items-center justify-center mb-6">
+                <Users className="h-7 w-7 text-blue-600" />
               </div>
               <h4 className="font-heading text-xl font-semibold text-stone-900 mb-3">
                 Track Progress
@@ -127,7 +140,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Feature 3 */}
+            {/* Feature 4 */}
             <div className="bg-white rounded-lg p-8 shadow-sm border border-stone-200 card-hover">
               <div className="w-14 h-14 rounded-lg bg-green-100 flex items-center justify-center mb-6">
                 <Shield className="h-7 w-7 text-green-600" />
@@ -136,7 +149,7 @@ export default function LandingPage() {
                 Secure Collection
               </h4>
               <p className="text-stone-600 leading-relaxed">
-                Choose your preferred collection method: pickup from Bursary, email to institution, or physical delivery.
+                Choose your preferred collection method: pickup from school or email directly to institution.
               </p>
             </div>
           </div>
@@ -162,7 +175,7 @@ export default function LandingPage() {
                 <span className="font-heading font-bold text-lg">S</span>
               </div>
               <h4 className="font-heading text-xl font-semibold text-stone-900 mb-2">Student Portal</h4>
-              <p className="text-stone-600 text-sm mb-4">Request transcripts, track status, and manage notifications.</p>
+              <p className="text-stone-600 text-sm mb-4">Request transcripts and recommendation letters, track status, and manage notifications.</p>
               <Link to="/register">
                 <Button variant="outline" className="w-full border-maroon-500 text-maroon-500 hover:bg-maroon-500 hover:text-white">
                   Register as Student
@@ -213,7 +226,7 @@ export default function LandingPage() {
               />
               <div>
                 <h4 className="font-heading font-semibold">Wolmer's Boys' School</h4>
-                <p className="text-stone-400 text-sm">Transcript Tracker</p>
+                <p className="text-stone-400 text-sm">Transcript & Recommendation Tracker</p>
               </div>
             </div>
             <p className="text-stone-400 text-sm">
