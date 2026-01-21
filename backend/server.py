@@ -39,7 +39,7 @@ if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
 # Create the main app
-app = FastAPI(title="Wolmer's Transcript Tracker API")
+app = FastAPI(title="WBS Transcript and Recommendation Tracker API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
