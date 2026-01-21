@@ -179,6 +179,79 @@ class AnalyticsResponse(BaseModel):
     requests_by_collection_method: List[dict]
     staff_workload: List[dict]
     overdue_by_days: List[dict]
+    # Recommendation letter stats
+    total_recommendation_requests: int = 0
+    pending_recommendation_requests: int = 0
+    completed_recommendation_requests: int = 0
+
+# ==================== RECOMMENDATION LETTER MODELS ====================
+
+class RecommendationRequestCreate(BaseModel):
+    first_name: str
+    middle_name: Optional[str] = ""
+    last_name: str
+    email: EmailStr
+    phone_number: str
+    address: str
+    years_attended: str  # e.g., "2015-2020"
+    last_form_class: str  # e.g., "6th Form" or "Upper 6"
+    institution_name: str
+    institution_address: str
+    directed_to: Optional[str] = ""  # Whom should the letter be directed to
+    program_name: str
+    needed_by_date: str
+    collection_method: str  # pickup, emailed
+
+class RecommendationRequestUpdate(BaseModel):
+    status: Optional[str] = None
+    assigned_staff_id: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    staff_notes: Optional[str] = None
+
+class RecommendationRequestResponse(BaseModel):
+    id: str
+    student_id: str
+    student_name: str
+    student_email: str
+    first_name: str
+    middle_name: str
+    last_name: str
+    email: str
+    phone_number: str
+    address: str
+    years_attended: str
+    last_form_class: str
+    institution_name: str
+    institution_address: str
+    directed_to: str
+    program_name: str
+    needed_by_date: str
+    collection_method: str
+    status: str
+    assigned_staff_id: Optional[str] = None
+    assigned_staff_name: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    staff_notes: Optional[str] = None
+    documents: List[dict] = []
+    timeline: List[dict] = []
+    created_at: str
+    updated_at: str
+
+class StudentRecommendationUpdate(BaseModel):
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
+    address: Optional[str] = None
+    years_attended: Optional[str] = None
+    last_form_class: Optional[str] = None
+    institution_name: Optional[str] = None
+    institution_address: Optional[str] = None
+    directed_to: Optional[str] = None
+    program_name: Optional[str] = None
+    needed_by_date: Optional[str] = None
+    collection_method: Optional[str] = None
 
 # ==================== HELPER FUNCTIONS ====================
 
