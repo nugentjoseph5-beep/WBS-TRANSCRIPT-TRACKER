@@ -20,7 +20,7 @@ class WolmersTranscriptAPITester:
         self.test_student_email = f"test_student_{datetime.now().strftime('%H%M%S')}@example.com"
         self.test_staff_email = f"test_staff_{datetime.now().strftime('%H%M%S')}@wolmers.org"
         self.admin_email = "admin@wolmers.org"
-        self.admin_password = "Admin123!"
+        self.admin_password = "NewAdmin123!"  # Updated after password reset test
 
     def log_result(self, test_name, success, details=""):
         """Log test result"""
