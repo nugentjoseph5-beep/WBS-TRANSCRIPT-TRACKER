@@ -643,6 +643,255 @@ class WolmersTranscriptAPITester:
                 else:
                     self.log_result(f"Auth me for {role}", False, f"Status: {response.status_code if response else 'No response'}")
 
+    def test_create_recommendation_request(self):
+        """Test creating recommendation letter request"""
+        print("\n🔍 Testing Recommendation Letter Request Creation...")
+        
+        if not self.student_token:
+            self.log_result("Create recommendation request", False, "No student token available")
+            return None
+        
+        needed_date = (datetime.now() + timedelta(days=45)).strftime('%Y-%m-%d')
+        
+        request_data = {
+            "first_name": "John",
+            "middle_name": "Michael",
+            "last_name": "Doe",
+            "email": "john.doe@email.com",
+            "phone_number": "+1 876 123 4567",
+            "address": "123 Main Street, Kingston, Jamaica",
+            "years_attended": "2015-2020",
+            "last_form_class": "Upper 6th",
+            "institution_name": "University of the West Indies",
+            "institution_address": "Mona Campus, Kingston 7, Jamaica",
+            "directed_to": "Admissions Committee",
+            "program_name": "Bachelor of Science in Computer Science",
+            "needed_by_date": needed_date,
+            "collection_method": "emailed"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', request_data, token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'id' in data and data['status'] == 'Pending' and data['program_name'] == 'Bachelor of Science in Computer Science':
+                self.log_result("Create recommendation request", True)
+                return data['id']
+            else:
+                self.log_result("Create recommendation request", False, "Invalid response format or missing fields")
+        else:
+            error_detail = ""
+            if response:
+                try:
+                    error_detail = f" - {response.json()}"
+                except:
+                    error_detail = f" - Status: {response.status_code}"
+            self.log_result("Create recommendation request", False, f"Status: {response.status_code if response else 'No response'}{error_detail}")
+        
+        return None
+
+    def test_get_recommendation_requests(self):
+        """Test getting recommendation requests for different roles"""
+        print("\n🔍 Testing Recommendation Request Retrieval...")
+        
+        # Test student getting their requests
+        if self.student_token:
+            response, error = self.make_request('GET', 'recommendations', token=self.student_token)
+            if response and response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Student get recommendation requests", True)
+                else:
+                    self.log_result("Student get recommendation requests", False, "Response is not a list")
+            else:
+                self.log_result("Student get recommendation requests", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test admin getting all requests
+        if self.admin_token:
+            response, error = self.make_request('GET', 'recommendations/all', token=self.admin_token)
+            if response and response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_result("Admin get all recommendation requests", True)
+                else:
+                    self.log_result("Admin get all recommendation requests", False, "Response is not a list")
+            else:
+                self.log_result("Admin get all recommendation requests", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_get_specific_recommendation_request(self, request_id):
+        """Test getting a specific recommendation request"""
+        print("\n🔍 Testing Specific Recommendation Request Retrieval...")
+        
+        if not request_id:
+            self.log_result("Get specific recommendation request", False, "No request ID available")
+            return
+        
+        # Test student getting their specific request
+        if self.student_token:
+            response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.student_token)
+            if response and response.status_code == 200:
+                data = response.json()
+                if data.get('id') == request_id:
+                    self.log_result("Student get specific recommendation request", True)
+                else:
+                    self.log_result("Student get specific recommendation request", False, "Request ID mismatch")
+            else:
+                self.log_result("Student get specific recommendation request", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test admin getting specific request
+        if self.admin_token:
+            response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.admin_token)
+            if response and response.status_code == 200:
+                data = response.json()
+                if data.get('id') == request_id:
+                    self.log_result("Admin get specific recommendation request", True)
+                else:
+                    self.log_result("Admin get specific recommendation request", False, "Request ID mismatch")
+            else:
+                self.log_result("Admin get specific recommendation request", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_update_recommendation_request_status(self, request_id):
+        """Test updating recommendation request status (admin/staff only)"""
+        print("\n🔍 Testing Recommendation Request Status Update...")
+        
+        if not request_id:
+            self.log_result("Update recommendation request status", False, "No request ID available")
+            return
+        
+        if not self.admin_token:
+            self.log_result("Update recommendation request status", False, "No admin token available")
+            return
+        
+        # Test status update
+        response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+            "status": "In Progress"
+        }, token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'In Progress':
+                self.log_result("Update recommendation request status", True)
+                
+                # Test assigning staff
+                if self.staff_token:
+                    # Get staff members to find staff ID
+                    staff_response, _ = self.make_request('GET', 'admin/staff', token=self.admin_token)
+                    if staff_response and staff_response.status_code == 200:
+                        staff_members = staff_response.json()
+                        if staff_members:
+                            staff_id = staff_members[0]['id']
+                            
+                            response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+                                "assigned_staff_id": staff_id
+                            }, token=self.admin_token)
+                            
+                            if response and response.status_code == 200:
+                                data = response.json()
+                                if data.get('assigned_staff_id') == staff_id:
+                                    self.log_result("Assign staff to recommendation request", True)
+                                else:
+                                    self.log_result("Assign staff to recommendation request", False, "Staff ID not assigned properly")
+                            else:
+                                self.log_result("Assign staff to recommendation request", False, f"Status: {response.status_code if response else 'No response'}")
+            else:
+                self.log_result("Update recommendation request status", False, "Status not updated properly")
+        else:
+            self.log_result("Update recommendation request status", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_student_edit_recommendation_request(self, request_id):
+        """Test student editing their own recommendation request"""
+        print("\n🔍 Testing Student Edit Recommendation Request...")
+        
+        if not request_id or not self.student_token:
+            self.log_result("Student edit recommendation request", False, "Missing request ID or student token")
+            return
+        
+        # Test editing request details
+        update_data = {
+            "program_name": "Master of Science in Computer Science",
+            "directed_to": "Graduate Admissions Office",
+            "institution_address": "Mona Campus, Kingston 7, Jamaica - Updated"
+        }
+        
+        response, error = self.make_request('PUT', f'recommendations/{request_id}/edit', update_data, token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if (data.get('program_name') == update_data['program_name'] and 
+                data.get('directed_to') == update_data['directed_to']):
+                self.log_result("Student edit recommendation request", True)
+            else:
+                self.log_result("Student edit recommendation request", False, "Fields not updated properly")
+        else:
+            self.log_result("Student edit recommendation request", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_recommendation_request_permissions(self):
+        """Test permission restrictions for recommendation requests"""
+        print("\n🔍 Testing Recommendation Request Permissions...")
+        
+        # Test student cannot update status
+        if self.student_token:
+            fake_id = str(uuid.uuid4())
+            response, error = self.make_request('PATCH', f'recommendations/{fake_id}', {
+                "status": "Completed"
+            }, token=self.student_token)
+            
+            if response and response.status_code == 403:
+                self.log_result("Student cannot update status", True)
+            else:
+                self.log_result("Student cannot update status", False, f"Expected 403, got {response.status_code if response else 'No response'}")
+        
+        # Test unauthenticated access
+        response, error = self.make_request('GET', 'recommendations')
+        if response and response.status_code == 401:
+            self.log_result("Unauthenticated access denied", True)
+        else:
+            self.log_result("Unauthenticated access denied", False, f"Expected 401, got {response.status_code if response else 'No response'}")
+
+    def test_recommendation_request_validation(self):
+        """Test validation for recommendation request creation"""
+        print("\n🔍 Testing Recommendation Request Validation...")
+        
+        if not self.student_token:
+            self.log_result("Recommendation request validation", False, "No student token available")
+            return
+        
+        # Test missing required fields
+        invalid_data = {
+            "first_name": "John",
+            # Missing required fields like last_name, email, etc.
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', invalid_data, token=self.student_token)
+        
+        if response and response.status_code == 422:  # Validation error
+            self.log_result("Recommendation request validation (missing fields)", True)
+        else:
+            self.log_result("Recommendation request validation (missing fields)", False, f"Expected 422, got {response.status_code if response else 'No response'}")
+        
+        # Test invalid email format
+        invalid_email_data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "invalid-email",  # Invalid email format
+            "phone_number": "+1 876 123 4567",
+            "address": "123 Main Street",
+            "years_attended": "2015-2020",
+            "last_form_class": "Upper 6th",
+            "institution_name": "Test University",
+            "institution_address": "Test Address",
+            "program_name": "Test Program",
+            "needed_by_date": "2025-08-15",
+            "collection_method": "emailed"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', invalid_email_data, token=self.student_token)
+        
+        if response and response.status_code == 422:  # Validation error
+            self.log_result("Recommendation request validation (invalid email)", True)
+        else:
+            self.log_result("Recommendation request validation (invalid email)", False, f"Expected 422, got {response.status_code if response else 'No response'}")
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting Wolmer's Transcript Tracker API Tests")
