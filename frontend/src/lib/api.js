@@ -70,6 +70,23 @@ export const requestAPI = {
   getDocument: (documentId) => api.get(`/documents/${documentId}`),
 };
 
+// Recommendation Letter Request API
+export const recommendationAPI = {
+  create: (data) => api.post('/recommendations', data),
+  getAll: () => api.get('/recommendations'),
+  getAllRequests: () => api.get('/recommendations/all'),
+  getById: (id) => api.get(`/recommendations/${id}`),
+  update: (id, data) => api.patch(`/recommendations/${id}`, data),
+  editAsStudent: (id, data) => api.put(`/recommendations/${id}/edit`, data),
+  uploadDocument: (id, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/recommendations/${id}/documents`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
 // Notification API
 export const notificationAPI = {
   getAll: () => api.get('/notifications'),
