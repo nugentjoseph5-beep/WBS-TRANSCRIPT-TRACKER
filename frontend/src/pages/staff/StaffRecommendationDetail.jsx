@@ -245,7 +245,11 @@ export default function StaffRecommendationDetail() {
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-stone-500">Years Attended</p>
-                    <p className="font-medium">{request.years_attended}</p>
+                    <p className="font-medium">
+                      {Array.isArray(request.years_attended) 
+                        ? request.years_attended.map(y => `${y.from_year}-${y.to_year}`).join(', ')
+                        : request.years_attended_str || request.years_attended || 'N/A'}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-stone-500">Last Form Class</p>
