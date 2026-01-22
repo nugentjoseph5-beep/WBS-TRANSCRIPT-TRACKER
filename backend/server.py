@@ -1316,12 +1316,21 @@ async def student_edit_recommendation(request_id: str, update_data: StudentRecom
 
 @api_router.patch("/recommendations/{request_id}", response_model=RecommendationRequestResponse)
 async def update_recommendation_request(request_id: str, update_data: RecommendationRequestUpdate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] == "student":
-        raise HTTPException(status_code=403, detail="Students cannot update request status")
-    
+    # Allow students to update their own pending recommendations
     request_doc = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
     if not request_doc:
         raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Check permissions
+    if current_user["role"] == "student":
+        # Students can only update their own requests and only if status is Pending
+        if request_doc["student_id"] != current_user["id"]:
+            raise HTTPException(status_code=403, detail="You can only update your own requests")
+        if request_doc["status"] != "Pending":
+            raise HTTPException(status_code=403, detail="You can only edit pending requests")
+        # Students cannot change status, assign staff, or reject
+        if update_data.status or update_data.assigned_staff_id or update_data.rejection_reason:
+            raise HTTPException(status_code=403, detail="Students cannot update request status or assignments")
     
     now = datetime.now(timezone.utc).isoformat()
     updates = {"updated_at": now}
