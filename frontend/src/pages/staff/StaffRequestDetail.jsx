@@ -27,7 +27,11 @@ export default function StaffRequestDetail() {
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState('');
+  const [statusNote, setStatusNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [staffNotes, setStaffNotes] = useState('');
 
   useEffect(() => {
     fetchRequest();
@@ -45,10 +49,26 @@ export default function StaffRequestDetail() {
   };
 
   const handleStatusUpdate = async (newStatus) => {
+    // Prompt for note before updating status
+    setPendingStatus(newStatus);
+    setStatusNote('');
+    setStatusUpdateDialogOpen(true);
+  };
+
+  const confirmStatusUpdate = async () => {
+    if (!statusNote.trim()) {
+      toast.error('Please provide a note for the status change');
+      return;
+    }
+
     setUpdating(true);
     try {
-      await requestAPI.update(id, { status: newStatus });
-      toast.success(`Status updated to ${newStatus}`);
+      await requestAPI.update(id, { 
+        status: pendingStatus,
+        note: statusNote 
+      });
+      toast.success(`Status updated to ${pendingStatus}`);
+      setStatusUpdateDialogOpen(false);
       fetchRequest();
     } catch (error) {
       toast.error('Failed to update status');
