@@ -290,7 +290,33 @@ export default function AdminDashboard() {
                 <p className="text-stone-500 text-sm hidden md:block">Overview of all requests</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
+              {/* Export Buttons */}
+              <Button 
+                onClick={handleExportPDF} 
+                disabled={exportLoading || loading}
+                size="sm"
+                className="bg-[#800000] hover:bg-[#600000] hidden md:flex"
+              >
+                {exportLoading ? (
+                  <Clock className="h-4 w-4 md:mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 md:mr-2" />
+                )}
+                <span className="hidden md:inline">Export PDF</span>
+              </Button>
+              <Button 
+                onClick={handleExportCSV}
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className="hidden md:flex"
+              >
+                <FileSpreadsheet className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Export CSV</span>
+              </Button>
+
+              {/* Existing buttons */}
               <Link to="/admin/notifications" className="relative" data-testid="admin-notifications-btn">
                 <Bell className="h-6 w-6 text-stone-500 cursor-pointer hover:text-stone-700" />
                 {unreadCount > 0 && (
