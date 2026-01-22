@@ -29,9 +29,14 @@ export default function AdminRecommendationDetail() {
   const [uploading, setUploading] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState('');
+  const [statusNote, setStatusNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [selectedStaff, setSelectedStaff] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [coActivitiesEdit, setCoActivitiesEdit] = useState(false);
+  const [coActivitiesValue, setCoActivitiesValue] = useState('');
 
   useEffect(() => {
     fetchData();
