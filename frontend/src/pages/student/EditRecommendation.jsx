@@ -52,8 +52,8 @@ export default function EditRecommendation() {
       const res = await recommendationAPI.getById(id);
       const data = res.data;
       
-      if (data.status !== 'Pending') {
-        toast.error('Only pending recommendations can be edited');
+      if (data.status !== 'Pending' && data.status !== 'In Progress') {
+        toast.error(`You cannot edit requests at the '${data.status}' stage. Please contact administration for assistance.`);
         navigate(`/student/recommendation/${id}`);
         return;
       }
