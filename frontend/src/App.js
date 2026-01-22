@@ -20,10 +20,13 @@ import StudentNotifications from "@/pages/student/StudentNotifications";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminRequests from "@/pages/admin/AdminRequests";
 import AdminRequestDetail from "@/pages/admin/AdminRequestDetail";
+import AdminRecommendations from "@/pages/admin/AdminRecommendations";
+import AdminRecommendationDetail from "@/pages/admin/AdminRecommendationDetail";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminNotifications from "@/pages/admin/AdminNotifications";
 import StaffDashboard from "@/pages/staff/StaffDashboard";
 import StaffRequestDetail from "@/pages/staff/StaffRequestDetail";
+import StaffRecommendationDetail from "@/pages/staff/StaffRecommendationDetail";
 import StaffNotifications from "@/pages/staff/StaffNotifications";
 
 // Protected Route Component
