@@ -93,13 +93,14 @@ class TranscriptRequestCreate(BaseModel):
     last_name: str
     school_id: str
     enrollment_status: str  # enrolled, graduate, withdrawn
-    academic_year: str
+    academic_years: List[dict]  # List of {"from_year": "2015", "to_year": "2020"}
     wolmers_email: str
     personal_email: EmailStr
     phone_number: str
     reason: str
     needed_by_date: str
     collection_method: str  # pickup, emailed, delivery
+    delivery_address: Optional[str] = ""  # Required if collection_method is 'delivery'
     institution_name: Optional[str] = ""
     institution_address: Optional[str] = ""
     institution_phone: Optional[str] = ""
