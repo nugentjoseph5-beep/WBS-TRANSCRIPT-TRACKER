@@ -268,7 +268,10 @@ export default function StudentDashboard() {
           <TabsContent value="transcripts" className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-maroon-300"
+                onClick={() => setStatusFilter('all')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -279,7 +282,10 @@ export default function StudentDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-yellow-300"
+                onClick={() => setStatusFilter('Pending')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -290,7 +296,10 @@ export default function StudentDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-blue-300"
+                onClick={() => setStatusFilter('In Progress')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -301,7 +310,10 @@ export default function StudentDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-green-300"
+                onClick={() => setStatusFilter('Completed')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
