@@ -628,7 +628,7 @@ export default function AdminDashboard() {
                   <CardHeader>
                     <CardTitle className="font-heading text-lg">Recommendation Status Distribution</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent id="recommendation-status-chart">
                     {recommendationStatusData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
