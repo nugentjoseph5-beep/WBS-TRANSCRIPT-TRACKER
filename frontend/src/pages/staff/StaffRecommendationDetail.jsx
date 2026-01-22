@@ -292,11 +292,64 @@ export default function StaffRecommendationDetail() {
                     <p className="font-medium">{request.last_form_class}</p>
                   </div>
                 </div>
-                {request.co_curricular_activities && (
+                {(coActivitiesEdit || request.co_curricular_activities) && (
                   <div className="mt-4">
-                    <p className="text-sm text-stone-500">Positions of Responsibility / Co-curricular Activities</p>
-                    <p className="font-medium whitespace-pre-wrap">{request.co_curricular_activities}</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-stone-500">Positions of Responsibility / Co-curricular Activities</p>
+                      {!coActivitiesEdit && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setCoActivitiesEdit(true)}
+                        >
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                    {coActivitiesEdit ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={coActivitiesValue}
+                          onChange={(e) => setCoActivitiesValue(e.target.value)}
+                          placeholder="Enter additional positions or activities..."
+                          rows={4}
+                          className="w-full"
+                        />
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={handleSaveCoActivities}
+                            disabled={updating}
+                          >
+                            {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => {
+                              setCoActivitiesEdit(false);
+                              setCoActivitiesValue(request.co_curricular_activities || '');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="font-medium whitespace-pre-wrap">{request.co_curricular_activities}</p>
+                    )}
                   </div>
+                )}
+                {!coActivitiesEdit && !request.co_curricular_activities && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCoActivitiesEdit(true)}
+                    className="mt-4"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Co-curricular Activities
+                  </Button>
                 )}
               </CardContent>
             </Card>
