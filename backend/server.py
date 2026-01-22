@@ -1195,7 +1195,9 @@ async def get_recommendation_requests(current_user: dict = Depends(get_current_u
         # Admin can see all requests
         requests = await db.recommendation_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     
-    return [RecommendationRequestResponse(**r) for r in requests]
+    # Normalize data for backward compatibility
+    normalized_requests = [normalize_recommendation_data(r) for r in requests]
+    return [RecommendationRequestResponse(**r) for r in normalized_requests]
 
 @api_router.get("/recommendations/all", response_model=List[RecommendationRequestResponse])
 async def get_all_recommendation_requests(current_user: dict = Depends(get_current_user)):
@@ -1203,7 +1205,9 @@ async def get_all_recommendation_requests(current_user: dict = Depends(get_curre
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     
     requests = await db.recommendation_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
-    return [RecommendationRequestResponse(**r) for r in requests]
+    # Normalize data for backward compatibility
+    normalized_requests = [normalize_recommendation_data(r) for r in requests]
+    return [RecommendationRequestResponse(**r) for r in normalized_requests]
 
 @api_router.get("/recommendations/{request_id}", response_model=RecommendationRequestResponse)
 async def get_recommendation_request(request_id: str, current_user: dict = Depends(get_current_user)):
@@ -1215,7 +1219,9 @@ async def get_recommendation_request(request_id: str, current_user: dict = Depen
     if current_user["role"] == "student" and request_doc["student_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="You can only view your own requests")
     
-    return RecommendationRequestResponse(**request_doc)
+    # Normalize data for backward compatibility
+    normalized_request = normalize_recommendation_data(request_doc)
+    return RecommendationRequestResponse(**normalized_request)
 
 @api_router.put("/recommendations/{request_id}/edit", response_model=RecommendationRequestResponse)
 async def student_edit_recommendation(request_id: str, update_data: StudentRecommendationUpdate, current_user: dict = Depends(get_current_user)):
