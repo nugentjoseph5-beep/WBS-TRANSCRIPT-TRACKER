@@ -252,14 +252,16 @@ class StudentRecommendationUpdate(BaseModel):
     email: Optional[str] = None
     phone_number: Optional[str] = None
     address: Optional[str] = None
-    years_attended: Optional[str] = None
+    years_attended: Optional[List[dict]] = None
     last_form_class: Optional[str] = None
+    co_curricular_activities: Optional[str] = None
     institution_name: Optional[str] = None
     institution_address: Optional[str] = None
     directed_to: Optional[str] = None
     program_name: Optional[str] = None
     needed_by_date: Optional[str] = None
     collection_method: Optional[str] = None
+    delivery_address: Optional[str] = None
 
 # ==================== HELPER FUNCTIONS ====================
 
