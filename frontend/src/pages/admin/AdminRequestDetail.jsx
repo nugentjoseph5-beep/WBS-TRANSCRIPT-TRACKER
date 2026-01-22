@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { 
   ArrowLeft, FileText, User, Mail, Phone, MapPin, 
   Calendar, Clock, Building, Download, Upload, CheckCircle,
-  XCircle, Loader2, UserPlus, LayoutDashboard, Users
+  XCircle, Loader2, UserPlus, LayoutDashboard, Users, Award, LogOut
 } from 'lucide-react';
 
 export default function AdminRequestDetail() {
