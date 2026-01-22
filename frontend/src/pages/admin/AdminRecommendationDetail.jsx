@@ -745,6 +745,43 @@ export default function AdminRecommendationDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Status Update Dialog */}
+      <Dialog open={statusUpdateDialogOpen} onOpenChange={setStatusUpdateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Status to "{pendingStatus}"</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="status-note">Note for Status Change *</Label>
+            <Textarea
+              id="status-note"
+              value={statusNote}
+              onChange={(e) => setStatusNote(e.target.value)}
+              placeholder="Please provide a note explaining this status change..."
+              className="mt-2"
+              rows={4}
+            />
+            <p className="text-xs text-stone-500 mt-1">
+              This note will be visible in the request timeline
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStatusUpdateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmStatusUpdate}
+              disabled={updating || !statusNote.trim()}
+            >
+              {updating ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Update Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
