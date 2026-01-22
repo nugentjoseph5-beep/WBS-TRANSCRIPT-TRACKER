@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { analyticsAPI, requestAPI, notificationAPI } from '@/lib/api';
+import { analyticsAPI, requestAPI, recommendationAPI, notificationAPI, exportAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate, getStatusBadgeClass } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
@@ -12,7 +13,8 @@ import {
 } from 'recharts';
 import { 
   LayoutDashboard, FileText, Users, Bell, LogOut, Menu, X,
-  Clock, CheckCircle, AlertCircle, XCircle, TrendingUp, AlertTriangle, UserCheck, Award
+  Clock, CheckCircle, AlertCircle, XCircle, TrendingUp, AlertTriangle, UserCheck, Award,
+  Download, FileSpreadsheet, FileType
 } from 'lucide-react';
 
 const COLORS = ['#800000', '#FFD700', '#78716C', '#22c55e', '#3b82f6', '#ef4444'];
@@ -24,9 +26,11 @@ export default function AdminDashboard() {
   const location = useLocation();
   const [analytics, setAnalytics] = useState(null);
   const [recentRequests, setRecentRequests] = useState([]);
+  const [recentRecommendations, setRecentRecommendations] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -34,18 +38,44 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [analyticsRes, requestsRes, unreadRes] = await Promise.all([
+      const [analyticsRes, requestsRes, recommendationsRes, unreadRes] = await Promise.all([
         analyticsAPI.get(),
         requestAPI.getAllRequests(),
+        recommendationAPI.getAllRequests(),
         notificationAPI.getUnreadCount(),
       ]);
       setAnalytics(analyticsRes.data);
       setRecentRequests(requestsRes.data.slice(0, 5));
+      setRecentRecommendations(recommendationsRes.data.slice(0, 5));
       setUnreadCount(unreadRes.data.count);
     } catch (error) {
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async (type, format) => {
+    setExportLoading(true);
+    try {
+      const response = type === 'transcripts' 
+        ? await exportAPI.transcripts(format)
+        : await exportAPI.recommendations(format);
+      
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${type}_report_${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success(`${type === 'transcripts' ? 'Transcript' : 'Recommendation'} report downloaded successfully`);
+    } catch (error) {
+      toast.error('Failed to export report');
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -55,8 +85,12 @@ export default function AdminDashboard() {
   };
 
   // Navigate to requests with filter
-  const handleTileClick = (filter) => {
-    navigate(`/admin/requests?filter=${filter}`);
+  const handleTileClick = (filter, type = 'transcripts') => {
+    if (type === 'transcripts') {
+      navigate(`/admin/requests?filter=${filter}`);
+    } else {
+      navigate(`/admin/recommendations?filter=${filter}`);
+    }
   };
 
   const navItems = [
@@ -66,7 +100,8 @@ export default function AdminDashboard() {
     { path: '/admin/users', icon: Users, label: 'Users' },
   ];
 
-  const statusData = analytics ? [
+  // Transcript status data
+  const transcriptStatusData = analytics ? [
     { name: 'Pending', value: analytics.pending_requests, color: '#eab308' },
     { name: 'In Progress', value: analytics.in_progress_requests, color: '#3b82f6' },
     { name: 'Processing', value: analytics.processing_requests, color: '#8b5cf6' },
@@ -74,6 +109,19 @@ export default function AdminDashboard() {
     { name: 'Completed', value: analytics.completed_requests, color: '#22c55e' },
     { name: 'Rejected', value: analytics.rejected_requests, color: '#ef4444' },
   ].filter(item => item.value > 0) : [];
+
+  // Recommendation status data
+  const recommendationStatusData = analytics ? [
+    { name: 'Pending', value: analytics.pending_recommendation_requests || 0, color: '#eab308' },
+    { name: 'Completed', value: analytics.completed_recommendation_requests || 0, color: '#22c55e' },
+    { name: 'Other', value: (analytics.total_recommendation_requests || 0) - (analytics.pending_recommendation_requests || 0) - (analytics.completed_recommendation_requests || 0), color: '#3b82f6' },
+  ].filter(item => item.value > 0) : [];
+
+  // Combined comparison data
+  const comparisonData = analytics ? [
+    { name: 'Transcripts', total: analytics.total_requests || 0, pending: analytics.pending_requests || 0, completed: analytics.completed_requests || 0 },
+    { name: 'Recommendations', total: analytics.total_recommendation_requests || 0, pending: analytics.pending_recommendation_requests || 0, completed: analytics.completed_recommendation_requests || 0 },
+  ] : [];
 
   const staffWorkloadData = analytics?.staff_workload || [];
   const overdueByDaysData = analytics?.overdue_by_days || [];
@@ -102,7 +150,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Navigation */}
+          {/* Nav Items */}
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
@@ -113,7 +161,7 @@ export default function AdminDashboard() {
                   className={`
                     flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                     ${isActive 
-                      ? 'bg-gold-500/20 text-gold-500 border-l-4 border-gold-500 -ml-1' 
+                      ? 'bg-maroon-500/20 text-maroon-400 border-l-4 border-maroon-500 -ml-1' 
                       : 'hover:bg-stone-800 text-stone-400 hover:text-white'
                     }
                   `}
@@ -126,19 +174,8 @@ export default function AdminDashboard() {
             })}
           </nav>
 
-          {/* User Info */}
+          {/* Logout */}
           <div className="p-4 border-t border-stone-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-maroon-500 flex items-center justify-center">
-                <span className="text-white font-medium">
-                  {user?.full_name?.charAt(0)}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-medium truncate">{user?.full_name}</p>
-                <p className="text-stone-500 text-xs truncate">{user?.email}</p>
-              </div>
-            </div>
             <Button
               variant="ghost"
               className="w-full justify-start text-stone-400 hover:text-white hover:bg-stone-800"
@@ -174,17 +211,19 @@ export default function AdminDashboard() {
               </button>
               <div>
                 <h1 className="font-heading text-xl md:text-2xl font-bold text-stone-900">Dashboard</h1>
-                <p className="text-stone-500 text-sm hidden md:block">Overview of transcript requests</p>
+                <p className="text-stone-500 text-sm hidden md:block">Overview of all requests</p>
               </div>
             </div>
-            <Link to="/admin/notifications" className="relative" data-testid="admin-notifications-btn">
-              <Bell className="h-6 w-6 text-stone-500 cursor-pointer hover:text-stone-700" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link to="/admin/notifications" className="relative" data-testid="admin-notifications-btn">
+                <Bell className="h-6 w-6 text-stone-500 cursor-pointer hover:text-stone-700" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </Link>
+            </div>
           </div>
         </header>
 
@@ -196,17 +235,62 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <>
-              {/* Stats Cards - Now Clickable */}
+              {/* Export Section */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="font-heading text-lg flex items-center gap-2">
+                    <Download className="h-5 w-5" />
+                    Export Reports
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Transcript Reports</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleExport('transcripts', 'xlsx')} disabled={exportLoading}>
+                          <FileSpreadsheet className="h-4 w-4 mr-1" /> XLSX
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleExport('transcripts', 'pdf')} disabled={exportLoading}>
+                          <FileType className="h-4 w-4 mr-1" /> PDF
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleExport('transcripts', 'docx')} disabled={exportLoading}>
+                          <FileText className="h-4 w-4 mr-1" /> DOCX
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Recommendation Reports</p>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleExport('recommendations', 'xlsx')} disabled={exportLoading}>
+                          <FileSpreadsheet className="h-4 w-4 mr-1" /> XLSX
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleExport('recommendations', 'pdf')} disabled={exportLoading}>
+                          <FileType className="h-4 w-4 mr-1" /> PDF
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleExport('recommendations', 'docx')} disabled={exportLoading}>
+                          <FileText className="h-4 w-4 mr-1" /> DOCX
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Transcript Stats Cards */}
+              <h2 className="font-heading text-lg font-semibold text-stone-900 mb-4 flex items-center gap-2">
+                <FileText className="h-5 w-5 text-maroon-500" />
+                Transcript Requests
+              </h2>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                 <Card 
                   className="cursor-pointer hover:shadow-lg transition-shadow hover:border-maroon-300"
-                  onClick={() => handleTileClick('all')}
-                  data-testid="tile-total"
+                  onClick={() => handleTileClick('all', 'transcripts')}
                 >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-stone-500">Total Requests</p>
+                        <p className="text-sm text-stone-500">Total</p>
                         <p className="text-2xl md:text-3xl font-bold text-stone-900">{analytics?.total_requests || 0}</p>
                       </div>
                       <FileText className="h-8 w-8 md:h-10 md:w-10 text-maroon-500/20" />
@@ -215,8 +299,7 @@ export default function AdminDashboard() {
                 </Card>
                 <Card 
                   className="cursor-pointer hover:shadow-lg transition-shadow hover:border-yellow-300"
-                  onClick={() => handleTileClick('Pending')}
-                  data-testid="tile-pending"
+                  onClick={() => handleTileClick('Pending', 'transcripts')}
                 >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
@@ -230,8 +313,7 @@ export default function AdminDashboard() {
                 </Card>
                 <Card 
                   className="cursor-pointer hover:shadow-lg transition-shadow hover:border-green-300"
-                  onClick={() => handleTileClick('Completed')}
-                  data-testid="tile-completed"
+                  onClick={() => handleTileClick('Completed', 'transcripts')}
                 >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
@@ -245,8 +327,7 @@ export default function AdminDashboard() {
                 </Card>
                 <Card 
                   className="cursor-pointer hover:shadow-lg transition-shadow hover:border-red-300"
-                  onClick={() => handleTileClick('Rejected')}
-                  data-testid="tile-rejected"
+                  onClick={() => handleTileClick('Rejected', 'transcripts')}
                 >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
@@ -260,8 +341,7 @@ export default function AdminDashboard() {
                 </Card>
                 <Card 
                   className={`cursor-pointer hover:shadow-lg transition-shadow col-span-2 md:col-span-1 ${analytics?.overdue_requests > 0 ? 'border-orange-400 bg-orange-50' : ''}`}
-                  onClick={() => handleTileClick('overdue')}
-                  data-testid="tile-overdue"
+                  onClick={() => handleTileClick('overdue', 'transcripts')}
                 >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
@@ -277,19 +357,106 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              {/* Charts Row 1 */}
+              {/* Recommendation Stats Cards */}
+              <h2 className="font-heading text-lg font-semibold text-stone-900 mb-4 flex items-center gap-2">
+                <Award className="h-5 w-5 text-gold-500" />
+                Recommendation Letter Requests
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-gold-300"
+                  onClick={() => handleTileClick('all', 'recommendations')}
+                >
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-stone-500">Total</p>
+                        <p className="text-2xl md:text-3xl font-bold text-stone-900">{analytics?.total_recommendation_requests || 0}</p>
+                      </div>
+                      <Award className="h-8 w-8 md:h-10 md:w-10 text-gold-500/20" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-yellow-300"
+                  onClick={() => handleTileClick('Pending', 'recommendations')}
+                >
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-stone-500">Pending</p>
+                        <p className="text-2xl md:text-3xl font-bold text-yellow-600">{analytics?.pending_recommendation_requests || 0}</p>
+                      </div>
+                      <Clock className="h-8 w-8 md:h-10 md:w-10 text-yellow-500/20" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-green-300"
+                  onClick={() => handleTileClick('Completed', 'recommendations')}
+                >
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-stone-500">Completed</p>
+                        <p className="text-2xl md:text-3xl font-bold text-green-600">{analytics?.completed_recommendation_requests || 0}</p>
+                      </div>
+                      <CheckCircle className="h-8 w-8 md:h-10 md:w-10 text-green-500/20" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-blue-300"
+                  onClick={() => handleTileClick('In Progress', 'recommendations')}
+                >
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-stone-500">In Progress</p>
+                        <p className="text-2xl md:text-3xl font-bold text-blue-600">
+                          {(analytics?.total_recommendation_requests || 0) - (analytics?.pending_recommendation_requests || 0) - (analytics?.completed_recommendation_requests || 0)}
+                        </p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 md:h-10 md:w-10 text-blue-500/20" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Status Distribution Pie Chart */}
+                {/* Comparison Chart */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="font-heading text-lg">Request Status Distribution</CardTitle>
+                    <CardTitle className="font-heading text-lg">Transcripts vs Recommendations</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {statusData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={comparisonData} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={120} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="total" fill="#800000" name="Total" />
+                        <Bar dataKey="pending" fill="#eab308" name="Pending" />
+                        <Bar dataKey="completed" fill="#22c55e" name="Completed" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Transcript Status Pie Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg">Transcript Status Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {transcriptStatusData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                           <Pie
-                            data={statusData}
+                            data={transcriptStatusData}
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
@@ -297,7 +464,7 @@ export default function AdminDashboard() {
                             paddingAngle={2}
                             dataKey="value"
                           >
-                            {statusData.map((entry, index) => (
+                            {transcriptStatusData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
@@ -306,169 +473,7 @@ export default function AdminDashboard() {
                         </PieChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="h-[300px] flex items-center justify-center text-stone-400">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Staff Workload Bar Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg flex items-center gap-2">
-                      <UserCheck className="h-5 w-5 text-maroon-500" />
-                      Staff Workload
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {staffWorkloadData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={staffWorkloadData} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                          <XAxis type="number" tick={{ fontSize: 12 }} />
-                          <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={100} />
-                          <Tooltip />
-                          <Bar dataKey="requests" fill="#800000" radius={[0, 4, 4, 0]}>
-                            {staffWorkloadData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.name === 'Unassigned' ? '#78716c' : WORKLOAD_COLORS[index % WORKLOAD_COLORS.length]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[300px] flex items-center justify-center text-stone-400">
-                        No assigned requests yet
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Charts Row 2 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Monthly Trend Bar Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-maroon-500" />
-                      Monthly Requests
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {analytics?.requests_by_month?.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={analytics.requests_by_month}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                          <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                          <YAxis tick={{ fontSize: 12 }} />
-                          <Tooltip />
-                          <Bar dataKey="count" fill="#800000" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[300px] flex items-center justify-center text-stone-400">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Overdue Breakdown Chart */}
-                <Card className={overdueByDaysData.length > 0 ? 'border-orange-200' : ''}>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg flex items-center gap-2">
-                      <AlertTriangle className={`h-5 w-5 ${overdueByDaysData.length > 0 ? 'text-orange-500' : 'text-stone-400'}`} />
-                      Overdue Breakdown
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {overdueByDaysData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={overdueByDaysData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" />
-                          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                          <YAxis tick={{ fontSize: 12 }} />
-                          <Tooltip />
-                          <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                            {overdueByDaysData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[300px] flex flex-col items-center justify-center text-stone-400">
-                        <CheckCircle className="h-12 w-12 text-green-500 mb-2" />
-                        <p>No overdue requests!</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Charts Row 3 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Enrollment Status Pie */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg">By Enrollment Status</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {analytics?.requests_by_enrollment?.some(e => e.value > 0) ? (
-                      <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                          <Pie
-                            data={analytics.requests_by_enrollment}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            dataKey="value"
-                            label
-                          >
-                            {analytics.requests_by_enrollment.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[250px] flex items-center justify-center text-stone-400">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Collection Method Pie */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg">By Collection Method</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {analytics?.requests_by_collection_method?.some(e => e.value > 0) ? (
-                      <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                          <Pie
-                            data={analytics.requests_by_collection_method}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            dataKey="value"
-                            label
-                          >
-                            {analytics.requests_by_collection_method.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[250px] flex items-center justify-center text-stone-400">
+                      <div className="h-[300px] flex items-center justify-center text-stone-500">
                         No data available
                       </div>
                     )}
@@ -476,56 +481,111 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              {/* Recent Requests */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="font-heading text-lg">Recent Requests</CardTitle>
-                  <Link to="/admin/requests">
-                    <Button variant="outline" size="sm">View All</Button>
-                  </Link>
-                </CardHeader>
-                <CardContent>
-                  {recentRequests.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-stone-200">
-                            <th className="text-left py-3 px-4 font-medium text-stone-500">Student</th>
-                            <th className="text-left py-3 px-4 font-medium text-stone-500">Academic Year</th>
-                            <th className="text-left py-3 px-4 font-medium text-stone-500">Status</th>
-                            <th className="text-left py-3 px-4 font-medium text-stone-500">Date</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {recentRequests.map((request) => (
-                            <tr 
-                              key={request.id} 
-                              className="border-b border-stone-100 hover:bg-stone-50 cursor-pointer"
-                              onClick={() => navigate(`/admin/request/${request.id}`)}
-                            >
-                              <td className="py-3 px-4">
-                                <p className="font-medium text-stone-900">{request.student_name}</p>
-                                <p className="text-xs text-stone-500">{request.student_email}</p>
-                              </td>
-                              <td className="py-3 px-4 text-stone-600">{request.academic_year}</td>
-                              <td className="py-3 px-4">
-                                <span className={getStatusBadgeClass(request.status)}>
-                                  {request.status}
-                                </span>
-                              </td>
-                              <td className="py-3 px-4 text-stone-500">{formatDate(request.created_at)}</td>
-                            </tr>
+              {/* Staff Workload */}
+              {staffWorkloadData.length > 0 && (
+                <Card className="mb-8">
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg flex items-center gap-2">
+                      <UserCheck className="h-5 w-5" />
+                      Staff Workload Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={staffWorkloadData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="count" name="Assigned Requests">
+                          {staffWorkloadData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={WORKLOAD_COLORS[index % WORKLOAD_COLORS.length]} />
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="py-8 text-center text-stone-400">
-                      No requests yet
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recent Activity */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Recent Transcript Requests */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-maroon-500" />
+                        Recent Transcript Requests
+                      </span>
+                      <Link to="/admin/requests" className="text-sm text-maroon-500 hover:underline">
+                        View all
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recentRequests.length === 0 ? (
+                      <p className="text-stone-500 text-center py-4">No recent requests</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {recentRequests.map((request) => (
+                          <Link
+                            key={request.id}
+                            to={`/admin/request/${request.id}`}
+                            className="flex items-center justify-between p-3 rounded-lg hover:bg-stone-50 transition-colors"
+                          >
+                            <div>
+                              <p className="font-medium text-stone-900">{request.student_name}</p>
+                              <p className="text-sm text-stone-500">{formatDate(request.created_at)}</p>
+                            </div>
+                            <span className={getStatusBadgeClass(request.status)}>
+                              {request.status}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Recent Recommendation Requests */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg flex items-center justify-between">
+                      <span className="flex items-center gap-2">
+                        <Award className="h-5 w-5 text-gold-500" />
+                        Recent Recommendation Requests
+                      </span>
+                      <Link to="/admin/recommendations" className="text-sm text-gold-600 hover:underline">
+                        View all
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recentRecommendations.length === 0 ? (
+                      <p className="text-stone-500 text-center py-4">No recent requests</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {recentRecommendations.map((request) => (
+                          <Link
+                            key={request.id}
+                            to={`/admin/recommendation/${request.id}`}
+                            className="flex items-center justify-between p-3 rounded-lg hover:bg-stone-50 transition-colors"
+                          >
+                            <div>
+                              <p className="font-medium text-stone-900">{request.student_name}</p>
+                              <p className="text-sm text-stone-500">{request.institution_name}</p>
+                            </div>
+                            <span className={getStatusBadgeClass(request.status)}>
+                              {request.status}
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </>
           )}
         </main>
