@@ -34,6 +34,7 @@ export default function EditRequest() {
     wolmers_email: '',
     personal_email: '',
     phone_number: '',
+    last_form_class: '',
     reason: '',
     collection_method: '',
     institution_name: '',
