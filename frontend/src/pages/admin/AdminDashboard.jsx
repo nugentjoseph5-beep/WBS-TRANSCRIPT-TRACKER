@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth';
 import { analyticsAPI, requestAPI, recommendationAPI, notificationAPI, exportAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { formatDate, getStatusBadgeClass } from '@/lib/utils';
+import { formatDate, getStatusBadgeClass, exportAnalyticsToPDF, exportAnalyticsToCSV } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
