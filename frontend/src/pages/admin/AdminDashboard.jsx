@@ -83,6 +83,41 @@ export default function AdminDashboard() {
     navigate('/');
   };
 
+  const handleExportPDF = async () => {
+    setExportLoading(true);
+    try {
+      // Collect all chart elements
+      const chartElements = {
+        'Transcript Status Distribution': document.getElementById('transcript-status-chart'),
+        'Recommendation Status Distribution': document.getElementById('recommendation-status-chart'),
+        'Transcripts by Enrollment Status': document.getElementById('transcript-enrollment-chart'),
+        'Recommendations by Enrollment Status': document.getElementById('recommendation-enrollment-chart'),
+        'Collection Methods Comparison': document.getElementById('collection-methods-chart'),
+        'Overdue Requests': document.getElementById('overdue-requests-chart'),
+        'Staff Workload Distribution': document.getElementById('staff-workload-chart'),
+        'Monthly Requests Trend': document.getElementById('monthly-trend-chart'),
+      };
+
+      await exportAnalyticsToPDF(analytics, chartElements);
+      toast.success('Analytics report exported as PDF');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export report');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    try {
+      exportAnalyticsToCSV(analytics);
+      toast.success('Analytics data exported as CSV');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export CSV');
+    }
+  };
+
   // Navigate to requests with filter
   const handleTileClick = (filter, type = 'transcripts') => {
     if (type === 'transcripts') {
