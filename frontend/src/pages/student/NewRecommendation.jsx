@@ -320,19 +320,15 @@ export default function NewRecommendation() {
 
               <div className="space-y-2">
                 <Label htmlFor="last_form_class">Last Form Class *</Label>
-                <Select 
-                  value={formData.last_form_class} 
-                  onValueChange={(value) => handleSelectChange('last_form_class', value)}
-                >
-                  <SelectTrigger data-testid="form-class-select">
-                    <SelectValue placeholder="Select form class" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formClasses.map((formClass) => (
-                      <SelectItem key={formClass} value={formClass}>{formClass}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="last_form_class"
+                  name="last_form_class"
+                  value={formData.last_form_class}
+                  onChange={handleChange}
+                  required
+                  placeholder="E.g., Upper 6th, Lower 6th, 5th Form"
+                  data-testid="last-form-class-input"
+                />
               </div>
 
               {/* Co-curricular Activities */}
