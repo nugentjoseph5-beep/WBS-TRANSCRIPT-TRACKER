@@ -13,6 +13,7 @@ import StudentDashboard from "@/pages/student/StudentDashboard";
 import ServiceSelection from "@/pages/student/ServiceSelection";
 import NewRequest from "@/pages/student/NewRequest";
 import NewRecommendation from "@/pages/student/NewRecommendation";
+import EditRecommendation from "@/pages/student/EditRecommendation";
 import RequestDetail from "@/pages/student/RequestDetail";
 import RecommendationDetail from "@/pages/student/RecommendationDetail";
 import EditRequest from "@/pages/student/EditRequest";
