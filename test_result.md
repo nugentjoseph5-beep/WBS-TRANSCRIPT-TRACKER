@@ -730,10 +730,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Staff Dashboard - Clickable Stats Tiles (P1)"
-    - "Staff Dashboard - Export Functionality (P1)"
-    - "Admin Dashboard - Verify Charts (P2)"
-    - "Critical Bug Verification (P0)"
+    - "Years Attended Display Bug Fix (P0)"
+    - "Student Dashboard Clickable Tiles Bug Fix (P0)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
