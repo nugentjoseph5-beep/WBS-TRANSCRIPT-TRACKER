@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { requestAPI, recommendationAPI, notificationAPI } from '@/lib/api';
+import { requestAPI, recommendationAPI, notificationAPI, exportAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +12,7 @@ import { formatDate, getStatusBadgeClass } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
   Bell, LogOut, FileText, Clock, CheckCircle, 
-  XCircle, ChevronRight, Menu, X, Search, Filter, Award
+  XCircle, ChevronRight, Menu, X, Search, Filter, Award, Download, FileSpreadsheet, FileType
 } from 'lucide-react';
 
 export default function StaffDashboard() {
@@ -26,6 +26,7 @@ export default function StaffDashboard() {
   const [activeTab, setActiveTab] = useState('transcripts');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
