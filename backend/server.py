@@ -1370,7 +1370,8 @@ async def update_recommendation_request(request_id: str, update_data: Recommenda
             await create_notification(student["id"], title, message, "recommendation_status_update", request_id)
     
     updated_request = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
-    return RecommendationRequestResponse(**updated_request)
+    normalized_request = normalize_recommendation_data(updated_request)
+    return RecommendationRequestResponse(**normalized_request)
 
 @api_router.post("/recommendations/{request_id}/documents")
 async def upload_recommendation_document(request_id: str, file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
