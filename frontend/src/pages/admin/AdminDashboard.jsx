@@ -692,7 +692,7 @@ export default function AdminDashboard() {
                   <CardHeader>
                     <CardTitle className="font-heading text-lg">Transcript Status Distribution</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent id="transcript-status-chart">
                     {transcriptStatusData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
