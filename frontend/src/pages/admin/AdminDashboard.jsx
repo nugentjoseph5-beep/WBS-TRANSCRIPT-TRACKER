@@ -764,7 +764,7 @@ export default function AdminDashboard() {
                     Monthly Requests Trend (Last 6 Months)
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent id="monthly-trend-chart">
                   {monthlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={monthlyTrendData}>
