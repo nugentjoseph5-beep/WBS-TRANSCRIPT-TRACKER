@@ -1702,6 +1702,21 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
     in_progress_rec = await db.recommendation_requests.count_documents({"status": "In Progress"})
     rejected_rec = await db.recommendation_requests.count_documents({"status": "Rejected"})
     
+    # Recommendations by enrollment status
+    recommendations_by_enrollment = []
+    for status in ["Enrolled", "Graduate", "Withdrawn"]:
+        count = await db.recommendation_requests.count_documents({"enrollment_status": status})
+        if count > 0:
+            recommendations_by_enrollment.append({"name": status, "value": count})
+    
+    # If no data, provide default
+    if not recommendations_by_enrollment:
+        recommendations_by_enrollment = [
+            {"name": "Enrolled", "value": 0},
+            {"name": "Graduate", "value": 0},
+            {"name": "Withdrawn", "value": 0}
+        ]
+    
     # Get overdue recommendation requests
     overdue_rec_count = 0
     overdue_rec_by_days = []
