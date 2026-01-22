@@ -196,14 +196,16 @@ class RecommendationRequestCreate(BaseModel):
     email: EmailStr
     phone_number: str
     address: str
-    years_attended: str  # e.g., "2015-2020"
+    years_attended: List[dict]  # List of {"from_year": "2015", "to_year": "2020"}
     last_form_class: str  # e.g., "6th Form" or "Upper 6"
+    co_curricular_activities: Optional[str] = ""  # Positions of responsibility and activities
     institution_name: str
     institution_address: str
     directed_to: Optional[str] = ""  # Whom should the letter be directed to
     program_name: str
     needed_by_date: str
-    collection_method: str  # pickup, emailed
+    collection_method: str  # pickup, emailed, delivery
+    delivery_address: Optional[str] = ""  # Required if collection_method is 'delivery'
 
 class RecommendationRequestUpdate(BaseModel):
     status: Optional[str] = None
