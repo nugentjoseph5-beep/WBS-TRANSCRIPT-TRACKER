@@ -126,7 +126,7 @@ export default function RegisterPage() {
 
           <div>
             <h2 className="font-heading text-3xl font-bold text-stone-900 mb-2">Create your account</h2>
-            <p className="text-stone-600">Register as a student to request transcripts</p>
+            <p className="text-stone-600">Register as a student to request transcripts and recommendation letters</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5" data-testid="register-form">
