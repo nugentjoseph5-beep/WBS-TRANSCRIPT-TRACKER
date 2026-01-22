@@ -70,6 +70,7 @@ export default function EditRequest() {
         wolmers_email: data.wolmers_email || '',
         personal_email: data.personal_email || '',
         phone_number: data.phone_number || '',
+        last_form_class: data.last_form_class || '',
         reason: data.reason || '',
         collection_method: data.collection_method || '',
         institution_name: data.institution_name || '',
