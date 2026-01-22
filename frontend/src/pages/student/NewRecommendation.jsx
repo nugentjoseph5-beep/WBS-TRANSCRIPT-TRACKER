@@ -347,6 +347,25 @@ export default function NewRecommendation() {
                   List any leadership positions, clubs, teams, or activities you participated in
                 </p>
               </div>
+
+              {/* Enrollment Status */}
+              <div className="space-y-2">
+                <Label htmlFor="enrollment_status">Current Enrollment Status *</Label>
+                <Select 
+                  value={formData.enrollment_status}
+                  onValueChange={(value) => handleSelectChange('enrollment_status', value)}
+                  required
+                >
+                  <SelectTrigger id="enrollment_status" data-testid="enrollment-status-select">
+                    <SelectValue placeholder="Select your enrollment status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Enrolled">Currently Enrolled</SelectItem>
+                    <SelectItem value="Graduate">Graduate/Alumni</SelectItem>
+                    <SelectItem value="Withdrawn">Withdrawn</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
