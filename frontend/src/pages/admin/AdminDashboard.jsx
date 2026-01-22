@@ -120,6 +120,26 @@ export default function AdminDashboard() {
   // Enrollment status data for transcripts
   const enrollmentData = analytics?.requests_by_enrollment || [];
 
+  // NEW: Transcript status distribution data
+  const transcriptStatusData = analytics ? [
+    { name: 'Pending', value: analytics.pending_requests || 0, color: '#eab308' },
+    { name: 'In Progress', value: analytics.in_progress_requests || 0, color: '#3b82f6' },
+    { name: 'Processing', value: analytics.processing_requests || 0, color: '#8b5cf6' },
+    { name: 'Ready', value: analytics.ready_requests || 0, color: '#06b6d4' },
+    { name: 'Completed', value: analytics.completed_requests || 0, color: '#22c55e' },
+    { name: 'Rejected', value: analytics.rejected_requests || 0, color: '#ef4444' },
+  ].filter(item => item.value > 0) : [];
+
+  // NEW: Recommendations by enrollment status
+  const recommendationsEnrollmentData = analytics?.recommendations_by_enrollment || [];
+
+  // NEW: Monthly requests trend data
+  const monthlyTrendData = analytics?.requests_by_month?.map(item => ({
+    month: item.month,
+    transcripts: item.count || 0,
+    recommendations: 0 // Will be populated from backend if available
+  })) || [];
+
   // Collection method comparison
   const collectionMethodComparison = analytics ? [
     { 
