@@ -51,6 +51,7 @@ export default function AdminRecommendationDetail() {
       setRequest(requestRes.data);
       setStaffMembers(staffRes.data);
       setSelectedStaff(requestRes.data.assigned_staff_id || '');
+      setCoActivitiesValue(requestRes.data.co_curricular_activities || '');
     } catch (error) {
       toast.error('Failed to load request details');
     } finally {
@@ -59,10 +60,26 @@ export default function AdminRecommendationDetail() {
   };
 
   const handleStatusUpdate = async (newStatus) => {
+    // Prompt for note before updating status
+    setPendingStatus(newStatus);
+    setStatusNote('');
+    setStatusUpdateDialogOpen(true);
+  };
+
+  const confirmStatusUpdate = async () => {
+    if (!statusNote.trim()) {
+      toast.error('Please provide a note for the status change');
+      return;
+    }
+
     setUpdating(true);
     try {
-      await recommendationAPI.update(id, { status: newStatus });
-      toast.success(`Status updated to ${newStatus}`);
+      await recommendationAPI.update(id, { 
+        status: pendingStatus,
+        note: statusNote 
+      });
+      toast.success(`Status updated to ${pendingStatus}`);
+      setStatusUpdateDialogOpen(false);
       fetchData();
     } catch (error) {
       toast.error('Failed to update status');
