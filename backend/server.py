@@ -1298,7 +1298,8 @@ async def student_edit_recommendation(request_id: str, update_data: StudentRecom
     )
     
     updated_request = await db.recommendation_requests.find_one({"id": request_id}, {"_id": 0})
-    return RecommendationRequestResponse(**updated_request)
+    normalized_request = normalize_recommendation_data(updated_request)
+    return RecommendationRequestResponse(**normalized_request)
 
 @api_router.patch("/recommendations/{request_id}", response_model=RecommendationRequestResponse)
 async def update_recommendation_request(request_id: str, update_data: RecommendationRequestUpdate, current_user: dict = Depends(get_current_user)):
