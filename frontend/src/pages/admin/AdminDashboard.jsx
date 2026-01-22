@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import { 
   LayoutDashboard, FileText, Users, Bell, LogOut, Menu, X,
-  Clock, CheckCircle, AlertCircle, XCircle, TrendingUp, AlertTriangle, UserCheck
+  Clock, CheckCircle, AlertCircle, XCircle, TrendingUp, AlertTriangle, UserCheck, Award
 } from 'lucide-react';
 
 const COLORS = ['#800000', '#FFD700', '#78716C', '#22c55e', '#3b82f6', '#ef4444'];
