@@ -87,6 +87,18 @@ export const recommendationAPI = {
   },
 };
 
+// Export API
+export const exportAPI = {
+  transcripts: (format, status = null) => {
+    const params = status ? `?status=${status}` : '';
+    return api.get(`/export/transcripts/${format}${params}`, { responseType: 'blob' });
+  },
+  recommendations: (format, status = null) => {
+    const params = status ? `?status=${status}` : '';
+    return api.get(`/export/recommendations/${format}${params}`, { responseType: 'blob' });
+  },
+};
+
 // Notification API
 export const notificationAPI = {
   getAll: () => api.get('/notifications'),
