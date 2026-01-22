@@ -1417,6 +1417,7 @@ async def update_recommendation_request(request_id: str, update_data: Recommenda
             updates["years_attended"] = update_data.years_attended
             # Create string version for backward compatibility
             updates["years_attended_str"] = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in update_data.years_attended if isinstance(y, dict)])
+        if update_data.enrollment_status: updates["enrollment_status"] = update_data.enrollment_status
         if update_data.last_form_class: updates["last_form_class"] = update_data.last_form_class
         if update_data.institution_name: updates["institution_name"] = update_data.institution_name
         if update_data.institution_address: updates["institution_address"] = update_data.institution_address
