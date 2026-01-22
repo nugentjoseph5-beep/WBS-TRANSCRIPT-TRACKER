@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { 
   ArrowLeft, FileText, User, Mail, Phone, MapPin, 
   Calendar, Clock, Building, Download, Upload,
-  XCircle, Loader2, Award
+  XCircle, Loader2, Award, Plus
 } from 'lucide-react';
 
 export default function StaffRecommendationDetail() {
@@ -107,6 +107,20 @@ export default function StaffRecommendationDetail() {
       fetchData();
     } catch (error) {
       toast.error('Failed to reject request');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleSaveCoActivities = async () => {
+    setUpdating(true);
+    try {
+      await recommendationAPI.update(id, { co_curricular_activities: coActivitiesValue });
+      toast.success('Co-curricular activities updated successfully');
+      setCoActivitiesEdit(false);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update co-curricular activities');
     } finally {
       setUpdating(false);
     }
