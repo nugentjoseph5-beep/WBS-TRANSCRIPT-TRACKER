@@ -188,6 +188,12 @@ export default function RecommendationDetail() {
                     <p className="font-medium">{request.last_form_class}</p>
                   </div>
                 </div>
+                {request.co_curricular_activities && (
+                  <div className="mt-4">
+                    <p className="text-sm text-stone-500">Positions of Responsibility / Co-curricular Activities</p>
+                    <p className="font-medium whitespace-pre-wrap">{request.co_curricular_activities}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
