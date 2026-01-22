@@ -341,6 +341,18 @@ export default function NewRequest() {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last_form_class">Last Form Class</Label>
+                <Input
+                  id="last_form_class"
+                  name="last_form_class"
+                  value={formData.last_form_class}
+                  onChange={handleChange}
+                  placeholder="E.g., Upper 6th, Lower 6th, 5th Form (Optional)"
+                  data-testid="last-form-class-input"
+                />
+              </div>
             </CardContent>
           </Card>
 
