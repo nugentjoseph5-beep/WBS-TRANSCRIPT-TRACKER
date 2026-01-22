@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { ArrowLeft, CalendarIcon, Loader2, Send } from 'lucide-react';
+import { ArrowLeft, CalendarIcon, Loader2, Send, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function NewRequest() {
@@ -21,18 +21,21 @@ export default function NewRequest() {
   const [loading, setLoading] = useState(false);
   const [neededByDate, setNeededByDate] = useState(null);
   
+  // Academic year ranges
+  const [academicYears, setAcademicYears] = useState([{ from_year: '', to_year: '' }]);
+  
   const [formData, setFormData] = useState({
     first_name: '',
     middle_name: '',
     last_name: '',
     school_id: '',
     enrollment_status: '',
-    academic_year: '',
     wolmers_email: '',
     personal_email: user?.email || '',
     phone_number: '',
     reason: '',
     collection_method: '',
+    delivery_address: '',
     institution_name: '',
     institution_address: '',
     institution_phone: '',
@@ -48,11 +51,41 @@ export default function NewRequest() {
     setFormData({ ...formData, [name]: value });
   };
 
+  // Academic year handlers
+  const addAcademicYear = () => {
+    setAcademicYears([...academicYears, { from_year: '', to_year: '' }]);
+  };
+
+  const removeAcademicYear = (index) => {
+    if (academicYears.length > 1) {
+      setAcademicYears(academicYears.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateAcademicYear = (index, field, value) => {
+    const updated = [...academicYears];
+    updated[index][field] = value;
+    setAcademicYears(updated);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!neededByDate) {
       toast.error('Please select a date by which you need the transcript');
+      return;
+    }
+
+    // Validate academic years
+    const validYears = academicYears.filter(y => y.from_year && y.to_year);
+    if (validYears.length === 0) {
+      toast.error('Please add at least one academic year range');
+      return;
+    }
+
+    // Validate delivery address if needed
+    if (formData.collection_method === 'delivery' && !formData.delivery_address) {
+      toast.error('Please enter a delivery address');
       return;
     }
 
@@ -79,6 +112,7 @@ export default function NewRequest() {
     try {
       const data = {
         ...formData,
+        academic_years: validYears,
         needed_by_date: format(neededByDate, 'yyyy-MM-dd'),
       };
       
@@ -92,11 +126,9 @@ export default function NewRequest() {
     }
   };
 
+  // Generate years for dropdowns
   const currentYear = new Date().getFullYear();
-  const academicYears = [];
-  for (let i = currentYear; i >= currentYear - 20; i--) {
-    academicYears.push(`${i}-${i + 1}`);
-  }
+  const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
   return (
     <div className="min-h-screen bg-stone-50" data-testid="new-request-page">
@@ -104,9 +136,9 @@ export default function NewRequest() {
       <header className="bg-white border-b border-stone-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
-            <Link to="/student" className="flex items-center gap-2 text-stone-600 hover:text-maroon-500">
+            <Link to="/student/select-service" className="flex items-center gap-2 text-stone-600 hover:text-maroon-500">
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to Dashboard</span>
+              <span>Back to Service Selection</span>
             </Link>
           </div>
         </div>
@@ -197,21 +229,63 @@ export default function NewRequest() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="academic_year">Academic Year for Transcript *</Label>
-                <Select 
-                  value={formData.academic_year} 
-                  onValueChange={(value) => handleSelectChange('academic_year', value)}
+              {/* Academic Years - Multiple Ranges */}
+              <div className="space-y-3">
+                <Label>Academic Years for Transcript *</Label>
+                <p className="text-xs text-stone-500">Select the year range(s) for which you need transcript records</p>
+                {academicYears.map((yearRange, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="flex-1 grid grid-cols-2 gap-3">
+                      <Select 
+                        value={yearRange.from_year} 
+                        onValueChange={(value) => updateAcademicYear(index, 'from_year', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="From Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={yearRange.to_year} 
+                        onValueChange={(value) => updateAcademicYear(index, 'to_year', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="To Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {academicYears.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAcademicYear(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addAcademicYear}
+                  className="mt-2"
                 >
-                  <SelectTrigger data-testid="academic-year-select">
-                    <SelectValue placeholder="Select academic year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {academicYears.map((year) => (
-                      <SelectItem key={year} value={year}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Another Year Range
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -273,21 +347,27 @@ export default function NewRequest() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="font-heading text-lg">Request Details</CardTitle>
-              <CardDescription>Tell us why you need the transcript and how to deliver it</CardDescription>
+              <CardDescription>Tell us about your transcript request</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="reason">Reason for Request *</Label>
-                <Textarea
-                  id="reason"
-                  name="reason"
-                  value={formData.reason}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., University application, Employment verification, etc."
-                  rows={3}
-                  data-testid="reason-input"
-                />
+                <Select 
+                  value={formData.reason} 
+                  onValueChange={(value) => handleSelectChange('reason', value)}
+                >
+                  <SelectTrigger data-testid="reason-select">
+                    <SelectValue placeholder="Select reason" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="University application">University Application</SelectItem>
+                    <SelectItem value="Employment">Employment</SelectItem>
+                    <SelectItem value="Scholarship application">Scholarship Application</SelectItem>
+                    <SelectItem value="Transfer">Transfer to Another School</SelectItem>
+                    <SelectItem value="Personal records">Personal Records</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -330,22 +410,37 @@ export default function NewRequest() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pickup">Pickup at Bursary</SelectItem>
-                      <SelectItem value="emailed">Emailed to Institution</SelectItem>
+                      <SelectItem value="emailed">Email to Institution</SelectItem>
                       <SelectItem value="delivery">Physical Delivery to Address</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {/* Delivery Address - Show when physical delivery is selected */}
+              {formData.collection_method === 'delivery' && (
+                <div className="space-y-2">
+                  <Label htmlFor="delivery_address">Delivery Address *</Label>
+                  <Textarea
+                    id="delivery_address"
+                    name="delivery_address"
+                    value={formData.delivery_address}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter the complete delivery address including street, city, parish/state, and postal code"
+                    rows={3}
+                    data-testid="delivery-address-input"
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Institution Details - Always shown and mandatory */}
+          {/* Institution Information */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="font-heading text-lg">Institution Details</CardTitle>
-              <CardDescription>
-                Where should we send the transcript? These details are required.
-              </CardDescription>
+              <CardTitle className="font-heading text-lg">Destination Institution</CardTitle>
+              <CardDescription>Where should the transcript be sent?</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -369,26 +464,13 @@ export default function NewRequest() {
                   value={formData.institution_address}
                   onChange={handleChange}
                   required
-                  placeholder="Enter full address including city and country"
-                  rows={3}
+                  placeholder="Full postal address of the institution"
+                  rows={2}
                   data-testid="institution-address-input"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="institution_email">Institution Email *</Label>
-                  <Input
-                    id="institution_email"
-                    name="institution_email"
-                    type="email"
-                    value={formData.institution_email}
-                    onChange={handleChange}
-                    required
-                    placeholder="admissions@university.edu"
-                    data-testid="institution-email-input"
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="institution_phone">Institution Phone *</Label>
                   <Input
@@ -398,8 +480,21 @@ export default function NewRequest() {
                     value={formData.institution_phone}
                     onChange={handleChange}
                     required
-                    placeholder="+1 XXX XXX XXXX"
+                    placeholder="+1 876 XXX XXXX"
                     data-testid="institution-phone-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="institution_email">Institution Email *</Label>
+                  <Input
+                    id="institution_email"
+                    name="institution_email"
+                    type="email"
+                    value={formData.institution_email}
+                    onChange={handleChange}
+                    required
+                    placeholder="admissions@institution.edu"
+                    data-testid="institution-email-input"
                   />
                 </div>
               </div>
@@ -408,13 +503,13 @@ export default function NewRequest() {
 
           {/* Submit */}
           <div className="flex justify-end gap-4">
-            <Link to="/student">
+            <Link to="/student/select-service">
               <Button type="button" variant="outline">Cancel</Button>
             </Link>
             <Button 
               type="submit" 
               disabled={loading}
-              className="bg-maroon-500 hover:bg-maroon-600"
+              className="bg-maroon-500 hover:bg-maroon-600 text-white"
               data-testid="submit-request-btn"
             >
               {loading ? (
