@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { 
   LayoutDashboard, FileText, Users, LogOut, Menu, X,
   Search, Filter, ChevronRight, UserPlus, Loader2, ArrowUpDown,
-  ArrowUp, ArrowDown, AlertTriangle, Calendar
+  ArrowUp, ArrowDown, AlertTriangle, Calendar, Award
 } from 'lucide-react';
 
 export default function AdminRequests() {
