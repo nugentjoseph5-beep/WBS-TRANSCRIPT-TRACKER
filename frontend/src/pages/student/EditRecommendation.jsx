@@ -205,19 +205,20 @@ export default function EditRecommendation() {
             <Loader2 className="h-8 w-8 animate-spin text-gold-500" />
           </div>
         ) : (
-        <div className="mb-8 flex items-center gap-4">
-          <div className="w-12 h-12 bg-gold-100 rounded-full flex items-center justify-center">
-            <Award className="h-6 w-6 text-gold-600" />
-          </div>
-          <div>
-            <h1 className="font-heading text-2xl md:text-3xl font-bold text-stone-900">
-              Edit Recommendation Letter Request
-            </h1>
-            <p className="text-stone-600">Update your recommendation letter request details</p>
-          </div>
-        </div>
+          <>
+            <div className="mb-8 flex items-center gap-4">
+              <div className="w-12 h-12 bg-gold-100 rounded-full flex items-center justify-center">
+                <Award className="h-6 w-6 text-gold-600" />
+              </div>
+              <div>
+                <h1 className="font-heading text-2xl md:text-3xl font-bold text-stone-900">
+                  Edit Recommendation Letter Request
+                </h1>
+                <p className="text-stone-600">Update your recommendation letter request details</p>
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit} data-testid="recommendation-request-form">
+            <form onSubmit={handleSubmit} data-testid="recommendation-request-form">
           {/* Personal Information */}
           <Card className="mb-6">
             <CardHeader>
