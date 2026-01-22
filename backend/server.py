@@ -702,6 +702,9 @@ async def create_transcript_request(request_data: TranscriptRequestCreate, curre
         "updated_by": current_user["full_name"]
     }
     
+    # Format academic years for display (backward compatibility)
+    academic_years_str = ", ".join([f"{y['from_year']}-{y['to_year']}" for y in request_data.academic_years]) if request_data.academic_years else ""
+    
     doc = {
         "id": request_id,
         "student_id": current_user["id"],
@@ -712,13 +715,15 @@ async def create_transcript_request(request_data: TranscriptRequestCreate, curre
         "last_name": request_data.last_name,
         "school_id": request_data.school_id,
         "enrollment_status": request_data.enrollment_status,
-        "academic_year": request_data.academic_year,
+        "academic_years": request_data.academic_years,
+        "academic_year": academic_years_str,  # Legacy field
         "wolmers_email": request_data.wolmers_email,
         "personal_email": request_data.personal_email,
         "phone_number": request_data.phone_number,
         "reason": request_data.reason,
         "needed_by_date": request_data.needed_by_date,
         "collection_method": request_data.collection_method,
+        "delivery_address": request_data.delivery_address or "",
         "institution_name": request_data.institution_name or "",
         "institution_address": request_data.institution_address or "",
         "institution_phone": request_data.institution_phone or "",
