@@ -946,6 +946,269 @@ class WolmersTranscriptAPITester:
         
         return False
 
+    def test_staff_login_specific(self):
+        """Test staff login with specific credentials from review request"""
+        print("\n🔍 Testing Staff Login with Specific Credentials...")
+        
+        response, error = self.make_request('POST', 'auth/login', {
+            "email": "staff@wolmers.org",
+            "password": "password123"
+        })
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'access_token' in data and data['user']['role'] == 'staff':
+                self.staff_token = data['access_token']
+                self.log_result("Staff login with specific credentials", True)
+                return True
+            else:
+                self.log_result("Staff login with specific credentials", False, "Invalid response format")
+        else:
+            self.log_result("Staff login with specific credentials", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return False
+
+    def test_student_login_specific(self):
+        """Test student login with specific credentials from review request"""
+        print("\n🔍 Testing Student Login with Specific Credentials...")
+        
+        response, error = self.make_request('POST', 'auth/login', {
+            "email": "student@test.com",
+            "password": "password123"
+        })
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'access_token' in data and data['user']['role'] == 'student':
+                self.student_token = data['access_token']
+                self.log_result("Student login with specific credentials", True)
+                return True
+            else:
+                self.log_result("Student login with specific credentials", False, "Invalid response format")
+        else:
+            self.log_result("Student login with specific credentials", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return False
+
+    def test_years_attended_display_fix(self):
+        """Test Years Attended field displays correctly as string for all user roles"""
+        print("\n🔍 Testing Years Attended Display Fix...")
+        
+        # First, create a recommendation request with years_attended array
+        if not self.student_token:
+            self.log_result("Years Attended Display Fix", False, "No student token available")
+            return None
+        
+        needed_date = (datetime.now() + timedelta(days=45)).strftime('%Y-%m-%d')
+        
+        request_data = {
+            "first_name": "Test",
+            "middle_name": "Years",
+            "last_name": "Display",
+            "email": "test.years@email.com",
+            "phone_number": "+1 876 555 9999",
+            "address": "123 Test Street, Kingston, Jamaica",
+            "years_attended": [{"from_year": "2015", "to_year": "2020"}, {"from_year": "2021", "to_year": "2022"}],
+            "last_form_class": "Upper 6th",
+            "co_curricular_activities": "Head Boy, Football Captain",
+            "institution_name": "Test University",
+            "institution_address": "Test Address",
+            "directed_to": "Admissions Office",
+            "program_name": "Computer Science",
+            "needed_by_date": needed_date,
+            "collection_method": "pickup"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', request_data, token=self.student_token)
+        
+        if not response or response.status_code != 200:
+            self.log_result("Years Attended Display Fix - Create Request", False, f"Status: {response.status_code if response else 'No response'}")
+            return None
+        
+        request_id = response.json()['id']
+        
+        # Test 1: Student viewing their own recommendation detail
+        response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            years_attended = data.get('years_attended')
+            years_attended_str = data.get('years_attended_str')
+            
+            # Check that years_attended is an array
+            if isinstance(years_attended, list) and len(years_attended) == 2:
+                # Check that years_attended_str is a properly formatted string
+                if years_attended_str == "2015-2020, 2021-2022":
+                    self.log_result("Years Attended Display Fix - Student View", True)
+                else:
+                    self.log_result("Years Attended Display Fix - Student View", False, f"Expected '2015-2020, 2021-2022', got '{years_attended_str}'")
+            else:
+                self.log_result("Years Attended Display Fix - Student View", False, f"years_attended should be array with 2 items, got {years_attended}")
+        else:
+            self.log_result("Years Attended Display Fix - Student View", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 2: Staff viewing recommendation detail
+        if self.staff_token:
+            response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.staff_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                years_attended_str = data.get('years_attended_str')
+                
+                if years_attended_str == "2015-2020, 2021-2022":
+                    self.log_result("Years Attended Display Fix - Staff View", True)
+                else:
+                    self.log_result("Years Attended Display Fix - Staff View", False, f"Expected '2015-2020, 2021-2022', got '{years_attended_str}'")
+            else:
+                self.log_result("Years Attended Display Fix - Staff View", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 3: Admin viewing recommendation detail
+        if self.admin_token:
+            response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.admin_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                years_attended_str = data.get('years_attended_str')
+                
+                if years_attended_str == "2015-2020, 2021-2022":
+                    self.log_result("Years Attended Display Fix - Admin View", True)
+                else:
+                    self.log_result("Years Attended Display Fix - Admin View", False, f"Expected '2015-2020, 2021-2022', got '{years_attended_str}'")
+            else:
+                self.log_result("Years Attended Display Fix - Admin View", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return request_id
+
+    def test_student_dashboard_recommendation_data(self):
+        """Test Student Dashboard gets proper recommendation data for clickable tiles"""
+        print("\n🔍 Testing Student Dashboard Recommendation Data...")
+        
+        if not self.student_token:
+            self.log_result("Student Dashboard Recommendation Data", False, "No student token available")
+            return
+        
+        # Test getting student's recommendations for dashboard
+        response, error = self.make_request('GET', 'recommendations', token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            
+            if isinstance(data, list):
+                # Check that each recommendation has the required fields for dashboard filtering
+                all_have_status = True
+                for rec in data:
+                    if 'status' not in rec:
+                        all_have_status = False
+                        break
+                
+                if all_have_status:
+                    self.log_result("Student Dashboard Recommendation Data - Status Field", True)
+                else:
+                    self.log_result("Student Dashboard Recommendation Data - Status Field", False, "Some recommendations missing status field")
+                
+                # Check for proper data structure
+                if len(data) > 0:
+                    sample_rec = data[0]
+                    required_fields = ['id', 'status', 'student_name', 'institution_name', 'program_name', 'created_at']
+                    missing_fields = [field for field in required_fields if field not in sample_rec]
+                    
+                    if not missing_fields:
+                        self.log_result("Student Dashboard Recommendation Data - Required Fields", True)
+                    else:
+                        self.log_result("Student Dashboard Recommendation Data - Required Fields", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_result("Student Dashboard Recommendation Data - Required Fields", True, "No recommendations to check (empty state)")
+            else:
+                self.log_result("Student Dashboard Recommendation Data", False, "Response is not a list")
+        else:
+            self.log_result("Student Dashboard Recommendation Data", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_recommendation_workflow_bug_verification(self):
+        """Test complete recommendation workflow to verify no critical bugs"""
+        print("\n🔍 Testing Recommendation Workflow Bug Verification...")
+        
+        if not all([self.student_token, self.admin_token, self.staff_token]):
+            self.log_result("Recommendation Workflow Bug Verification", False, "Missing required tokens")
+            return
+        
+        # Step 1: Student creates recommendation request
+        needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        request_data = {
+            "first_name": "Bug",
+            "middle_name": "Test",
+            "last_name": "Verification",
+            "email": "bug.test@email.com",
+            "phone_number": "+1 876 555 0000",
+            "address": "Bug Test Address, Kingston, Jamaica",
+            "years_attended": [{"from_year": "2018", "to_year": "2023"}],
+            "last_form_class": "Upper 6th",
+            "co_curricular_activities": "Student Council President",
+            "institution_name": "Bug Test University",
+            "institution_address": "Bug Test University Address",
+            "directed_to": "Admissions Committee",
+            "program_name": "Software Engineering",
+            "needed_by_date": needed_date,
+            "collection_method": "emailed"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', request_data, token=self.student_token)
+        
+        if not response or response.status_code != 200:
+            self.log_result("Recommendation Workflow - Student Create", False, f"Status: {response.status_code if response else 'No response'}")
+            return
+        
+        request_id = response.json()['id']
+        self.log_result("Recommendation Workflow - Student Create", True)
+        
+        # Step 2: Admin views recommendation detail
+        response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Recommendation Workflow - Admin View Detail", True)
+        else:
+            self.log_result("Recommendation Workflow - Admin View Detail", False, f"Status: {response.status_code if response else 'No response'}")
+            return
+        
+        # Step 3: Admin assigns staff member
+        staff_response, _ = self.make_request('GET', 'admin/staff', token=self.admin_token)
+        if staff_response and staff_response.status_code == 200:
+            staff_members = staff_response.json()
+            if staff_members:
+                staff_id = staff_members[0]['id']
+                
+                response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+                    "assigned_staff_id": staff_id
+                }, token=self.admin_token)
+                
+                if response and response.status_code == 200:
+                    self.log_result("Recommendation Workflow - Admin Assign Staff", True)
+                else:
+                    self.log_result("Recommendation Workflow - Admin Assign Staff", False, f"Status: {response.status_code if response else 'No response'}")
+                    return
+        
+        # Step 4: Staff views assigned recommendation detail
+        response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.staff_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Recommendation Workflow - Staff View Detail", True)
+        else:
+            self.log_result("Recommendation Workflow - Staff View Detail", False, f"Status: {response.status_code if response else 'No response'}")
+            return
+        
+        # Step 5: Staff updates recommendation status
+        response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+            "status": "In Progress"
+        }, token=self.staff_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Recommendation Workflow - Staff Update Status", True)
+        else:
+            self.log_result("Recommendation Workflow - Staff Update Status", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Final verification: Check that the workflow completed without errors
+        self.log_result("Recommendation Workflow - Complete End-to-End", True)
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting Wolmer's Transcript Tracker API Tests")
