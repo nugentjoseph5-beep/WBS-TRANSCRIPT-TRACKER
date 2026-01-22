@@ -1402,6 +1402,29 @@ async def update_recommendation_request(request_id: str, update_data: Recommenda
     if update_data.co_curricular_activities is not None:
         updates["co_curricular_activities"] = update_data.co_curricular_activities
     
+    # Allow students to update their own pending requests
+    if current_user["role"] == "student":
+        # Update fields students can modify
+        if update_data.first_name: updates["first_name"] = update_data.first_name
+        if update_data.middle_name is not None: updates["middle_name"] = update_data.middle_name
+        if update_data.last_name: updates["last_name"] = update_data.last_name
+        if update_data.email: updates["email"] = update_data.email
+        if update_data.phone_number: updates["phone_number"] = update_data.phone_number
+        if update_data.address: updates["address"] = update_data.address
+        if update_data.years_attended: 
+            updates["years_attended"] = update_data.years_attended
+            # Create string version for backward compatibility
+            updates["years_attended_str"] = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in update_data.years_attended if isinstance(y, dict)])
+        if update_data.last_form_class: updates["last_form_class"] = update_data.last_form_class
+        if update_data.institution_name: updates["institution_name"] = update_data.institution_name
+        if update_data.institution_address: updates["institution_address"] = update_data.institution_address
+        if update_data.directed_to: updates["directed_to"] = update_data.directed_to
+        if update_data.program_name: updates["program_name"] = update_data.program_name
+        if update_data.needed_by_date: updates["needed_by_date"] = update_data.needed_by_date
+        if update_data.collection_method: updates["collection_method"] = update_data.collection_method
+        if update_data.delivery_address is not None: updates["delivery_address"] = update_data.delivery_address
+        if update_data.co_curricular_activities is not None: updates["co_curricular_activities"] = update_data.co_curricular_activities
+    
     await db.recommendation_requests.update_one({"id": request_id}, {"$set": updates})
     
     # Notify student of status change
