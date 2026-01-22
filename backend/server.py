@@ -235,6 +235,7 @@ class RecommendationRequestUpdate(BaseModel):
     assigned_staff_id: Optional[str] = None
     rejection_reason: Optional[str] = None
     staff_notes: Optional[str] = None
+    note: Optional[str] = None  # Note for status changes
 
 class RecommendationRequestResponse(BaseModel):
     id: str
