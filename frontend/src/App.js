@@ -145,6 +145,16 @@ function AppRoutes() {
           <AdminRequestDetail />
         </ProtectedRoute>
       } />
+      <Route path="/admin/recommendations" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminRecommendations />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/recommendation/:id" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminRecommendationDetail />
+        </ProtectedRoute>
+      } />
       <Route path="/admin/users" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <AdminUsers />
@@ -165,6 +175,11 @@ function AppRoutes() {
       <Route path="/staff/request/:id" element={
         <ProtectedRoute allowedRoles={['staff']}>
           <StaffRequestDetail />
+        </ProtectedRoute>
+      } />
+      <Route path="/staff/recommendation/:id" element={
+        <ProtectedRoute allowedRoles={['staff']}>
+          <StaffRecommendationDetail />
         </ProtectedRoute>
       } />
       <Route path="/staff/notifications" element={
