@@ -206,8 +206,8 @@ class WolmersTranscriptAPITester:
         return False
 
     def test_create_transcript_request(self):
-        """Test creating transcript request"""
-        print("\n🔍 Testing Transcript Request Creation...")
+        """Test creating transcript request with NEW FIELDS"""
+        print("\n🔍 Testing Transcript Request Creation with New Fields...")
         
         if not self.student_token:
             self.log_result("Create transcript request", False, "No student token available")
@@ -215,33 +215,41 @@ class WolmersTranscriptAPITester:
         
         needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
         
+        # Test with NEW ARRAY FORMAT for academic_years and delivery collection method
         request_data = {
-            "first_name": "John",
-            "middle_name": "Michael",
-            "last_name": "Doe",
-            "school_id": "WBS2024001",
+            "first_name": "Michael",
+            "middle_name": "David",
+            "last_name": "Brown",
+            "school_id": "WBS2022005",
             "enrollment_status": "graduate",
-            "academic_year": "2023-2024",
-            "wolmers_email": "john.doe.2024@wolmers.org",
+            "academic_years": [{"from_year": "2016", "to_year": "2022"}],  # NEW ARRAY FORMAT
+            "wolmers_email": "michael.brown.2022@wolmers.org",
             "personal_email": self.test_student_email,
-            "phone_number": "+1 876 555 0123",
+            "phone_number": "+1 876 555 5678",
             "reason": "University application",
             "needed_by_date": needed_date,
-            "collection_method": "emailed",
-            "institution_email": "admissions@university.edu"
+            "collection_method": "delivery",  # NEW COLLECTION METHOD
+            "delivery_address": "123 Delivery Street, Portmore, St. Catherine, Jamaica",  # NEW FIELD
+            "institution_name": "UWI Mona",
+            "institution_address": "Mona Campus, Kingston 7, Jamaica",
+            "institution_phone": "+1 876 927 1660",
+            "institution_email": "admissions@uwimona.edu.jm"
         }
         
         response, error = self.make_request('POST', 'requests', request_data, token=self.student_token)
         
         if response and response.status_code == 200:
             data = response.json()
-            if 'id' in data and data['status'] == 'Pending':
-                self.log_result("Create transcript request", True)
+            if ('id' in data and data['status'] == 'Pending' and
+                data['collection_method'] == 'delivery' and
+                data['delivery_address'] == '123 Delivery Street, Portmore, St. Catherine, Jamaica' and
+                isinstance(data['academic_years'], list) and len(data['academic_years']) == 1):
+                self.log_result("Create transcript request with new fields", True)
                 return data['id']
             else:
-                self.log_result("Create transcript request", False, "Invalid response format")
+                self.log_result("Create transcript request with new fields", False, "New fields not saved properly")
         else:
-            self.log_result("Create transcript request", False, f"Status: {response.status_code if response else 'No response'}")
+            self.log_result("Create transcript request with new fields", False, f"Status: {response.status_code if response else 'No response'}")
         
         return None
 
