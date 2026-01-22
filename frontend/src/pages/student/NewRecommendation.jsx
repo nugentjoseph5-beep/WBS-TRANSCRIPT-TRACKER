@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { ArrowLeft, CalendarIcon, Loader2, Send, Award } from 'lucide-react';
+import { ArrowLeft, CalendarIcon, Loader2, Send, Award, Plus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function NewRecommendation() {
@@ -21,6 +21,9 @@ export default function NewRecommendation() {
   const [loading, setLoading] = useState(false);
   const [neededByDate, setNeededByDate] = useState(null);
   
+  // Year ranges for attendance
+  const [yearsAttended, setYearsAttended] = useState([{ from_year: '', to_year: '' }]);
+  
   const [formData, setFormData] = useState({
     first_name: '',
     middle_name: '',
@@ -28,13 +31,14 @@ export default function NewRecommendation() {
     email: user?.email || '',
     phone_number: '',
     address: '',
-    years_attended: '',
     last_form_class: '',
+    co_curricular_activities: '',
     institution_name: '',
     institution_address: '',
     directed_to: '',
     program_name: '',
     collection_method: '',
+    delivery_address: '',
   });
 
   const handleChange = (e) => {
@@ -46,6 +50,23 @@ export default function NewRecommendation() {
     setFormData({ ...formData, [name]: value });
   };
 
+  // Year range handlers
+  const addYearRange = () => {
+    setYearsAttended([...yearsAttended, { from_year: '', to_year: '' }]);
+  };
+
+  const removeYearRange = (index) => {
+    if (yearsAttended.length > 1) {
+      setYearsAttended(yearsAttended.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateYearRange = (index, field, value) => {
+    const updated = [...yearsAttended];
+    updated[index][field] = value;
+    setYearsAttended(updated);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -54,10 +75,23 @@ export default function NewRecommendation() {
       return;
     }
 
+    // Validate year ranges
+    const validYears = yearsAttended.filter(y => y.from_year && y.to_year);
+    if (validYears.length === 0) {
+      toast.error('Please add at least one year range for attendance');
+      return;
+    }
+
+    // Validate delivery address if needed
+    if (formData.collection_method === 'delivery' && !formData.delivery_address) {
+      toast.error('Please enter a delivery address');
+      return;
+    }
+
     // Validate required fields
     const requiredFields = [
       'first_name', 'last_name', 'email', 'phone_number', 'address',
-      'years_attended', 'last_form_class', 'institution_name', 
+      'last_form_class', 'institution_name', 
       'institution_address', 'program_name', 'collection_method'
     ];
     
@@ -73,6 +107,7 @@ export default function NewRecommendation() {
     try {
       const data = {
         ...formData,
+        years_attended: validYears,
         needed_by_date: format(neededByDate, 'yyyy-MM-dd'),
       };
       
@@ -86,23 +121,9 @@ export default function NewRecommendation() {
     }
   };
 
-  // Generate year ranges for years attended
+  // Generate years for dropdowns
   const currentYear = new Date().getFullYear();
-  const yearRanges = [];
-  for (let endYear = currentYear; endYear >= currentYear - 30; endYear--) {
-    for (let duration = 5; duration <= 7; duration++) {
-      const startYear = endYear - duration;
-      if (startYear >= 1980) {
-        yearRanges.push(`${startYear}-${endYear}`);
-      }
-    }
-  }
-  // Remove duplicates and sort
-  const uniqueYearRanges = [...new Set(yearRanges)].sort((a, b) => {
-    const aEnd = parseInt(a.split('-')[1]);
-    const bEnd = parseInt(b.split('-')[1]);
-    return bEnd - aEnd;
-  });
+  const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
 
   const formClasses = [
     '1st Form',
@@ -239,39 +260,95 @@ export default function NewRecommendation() {
               <CardDescription>Provide details about your time at Wolmer's Boys' School</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="years_attended">Years Attended *</Label>
-                  <Select 
-                    value={formData.years_attended} 
-                    onValueChange={(value) => handleSelectChange('years_attended', value)}
-                  >
-                    <SelectTrigger data-testid="years-attended-select">
-                      <SelectValue placeholder="Select years" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {uniqueYearRanges.slice(0, 50).map((range) => (
-                        <SelectItem key={range} value={range}>{range}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_form_class">Last Form Class *</Label>
-                  <Select 
-                    value={formData.last_form_class} 
-                    onValueChange={(value) => handleSelectChange('last_form_class', value)}
-                  >
-                    <SelectTrigger data-testid="form-class-select">
-                      <SelectValue placeholder="Select form class" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {formClasses.map((formClass) => (
-                        <SelectItem key={formClass} value={formClass}>{formClass}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Years Attended - Multiple Ranges */}
+              <div className="space-y-3">
+                <Label>Years Attended *</Label>
+                {yearsAttended.map((yearRange, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="flex-1 grid grid-cols-2 gap-3">
+                      <Select 
+                        value={yearRange.from_year} 
+                        onValueChange={(value) => updateYearRange(index, 'from_year', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="From Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={yearRange.to_year} 
+                        onValueChange={(value) => updateYearRange(index, 'to_year', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="To Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {yearsAttended.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeYearRange(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addYearRange}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Another Year Range
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last_form_class">Last Form Class *</Label>
+                <Select 
+                  value={formData.last_form_class} 
+                  onValueChange={(value) => handleSelectChange('last_form_class', value)}
+                >
+                  <SelectTrigger data-testid="form-class-select">
+                    <SelectValue placeholder="Select form class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formClasses.map((formClass) => (
+                      <SelectItem key={formClass} value={formClass}>{formClass}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Co-curricular Activities */}
+              <div className="space-y-2">
+                <Label htmlFor="co_curricular_activities">Positions of Responsibility / Co-curricular Activities</Label>
+                <Textarea
+                  id="co_curricular_activities"
+                  name="co_curricular_activities"
+                  value={formData.co_curricular_activities}
+                  onChange={handleChange}
+                  placeholder="E.g., Head Boy, Prefect, Captain of Football Team, Member of Debate Club, etc."
+                  rows={3}
+                />
+                <p className="text-xs text-stone-500">
+                  List any leadership positions, clubs, teams, or activities you participated in
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -386,10 +463,28 @@ export default function NewRecommendation() {
                     <SelectContent>
                       <SelectItem value="pickup">Picked Up at School</SelectItem>
                       <SelectItem value="emailed">Emailed to Institution</SelectItem>
+                      <SelectItem value="delivery">Physical Delivery to Address</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {/* Delivery Address - Show when physical delivery is selected */}
+              {formData.collection_method === 'delivery' && (
+                <div className="space-y-2">
+                  <Label htmlFor="delivery_address">Delivery Address *</Label>
+                  <Textarea
+                    id="delivery_address"
+                    name="delivery_address"
+                    value={formData.delivery_address}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter the complete delivery address"
+                    rows={3}
+                    data-testid="delivery-address-input"
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
 
