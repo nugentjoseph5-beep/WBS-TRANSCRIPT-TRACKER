@@ -33,6 +33,7 @@ export default function NewRequest() {
     wolmers_email: '',
     personal_email: user?.email || '',
     phone_number: '',
+    last_form_class: '',
     reason: '',
     collection_method: '',
     delivery_address: '',
