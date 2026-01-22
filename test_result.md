@@ -780,9 +780,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Years Attended Display Bug Fix (P0)"
-    - "Student Dashboard Clickable Tiles Bug Fix (P0)"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
