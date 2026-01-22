@@ -1662,6 +1662,9 @@ class WolmersTranscriptAPITester:
         # Test Recommendation Workflow Bug Verification
         self.test_recommendation_workflow_bug_verification()
         
+        # CRITICAL: Test Status Notes Functionality (Review Request)
+        self.test_status_notes_functionality_comprehensive()
+        
         # PRIORITY: Test NEW FIELDS for transcript and recommendation requests
         print("\n" + "🎯" * 20)
         print("🎯 PRIORITY: NEW FIELDS TESTING")
