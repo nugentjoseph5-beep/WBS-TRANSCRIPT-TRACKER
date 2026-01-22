@@ -138,7 +138,13 @@ export default function AdminNotifications() {
                           </div>
                           <div className="flex items-center gap-2">
                             {notification.request_id && (
-                              <Link to={`/admin/request/${notification.request_id}`}>
+                              <Link 
+                                to={
+                                  notification.type?.includes('recommendation') 
+                                    ? `/admin/recommendation/${notification.request_id}`
+                                    : `/admin/request/${notification.request_id}`
+                                }
+                              >
                                 <Button variant="ghost" size="sm">
                                   View
                                 </Button>
