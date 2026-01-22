@@ -199,7 +199,15 @@ class AnalyticsResponse(BaseModel):
     # Recommendation letter stats
     total_recommendation_requests: int = 0
     pending_recommendation_requests: int = 0
+    in_progress_recommendation_requests: int = 0
     completed_recommendation_requests: int = 0
+    rejected_recommendation_requests: int = 0
+    overdue_recommendation_requests: int = 0
+    # Collection method breakdown for recommendations
+    recommendations_by_collection_method: List[dict] = []
+    # Overdue breakdown
+    overdue_transcripts_by_days: List[dict] = []
+    overdue_recommendations_by_days: List[dict] = []
 
 # ==================== RECOMMENDATION LETTER MODELS ====================
 
