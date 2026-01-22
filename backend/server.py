@@ -1052,6 +1052,9 @@ async def create_recommendation_request(request_data: RecommendationRequestCreat
         "updated_by": current_user["full_name"]
     }
     
+    # Format years attended for display (backward compatibility)
+    years_attended_str = ", ".join([f"{y['from_year']}-{y['to_year']}" for y in request_data.years_attended]) if request_data.years_attended else ""
+    
     doc = {
         "id": request_id,
         "student_id": current_user["id"],
@@ -1064,13 +1067,16 @@ async def create_recommendation_request(request_data: RecommendationRequestCreat
         "phone_number": request_data.phone_number,
         "address": request_data.address,
         "years_attended": request_data.years_attended,
+        "years_attended_str": years_attended_str,  # Legacy field
         "last_form_class": request_data.last_form_class,
+        "co_curricular_activities": request_data.co_curricular_activities or "",
         "institution_name": request_data.institution_name,
         "institution_address": request_data.institution_address,
         "directed_to": request_data.directed_to or "",
         "program_name": request_data.program_name,
         "needed_by_date": request_data.needed_by_date,
         "collection_method": request_data.collection_method,
+        "delivery_address": request_data.delivery_address or "",
         "status": "Pending",
         "assigned_staff_id": None,
         "assigned_staff_name": None,
