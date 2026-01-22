@@ -25,8 +25,13 @@ export default function StaffRecommendationDetail() {
   const [updating, setUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState('');
+  const [statusNote, setStatusNote] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [staffNotes, setStaffNotes] = useState('');
+  const [coActivitiesEdit, setCoActivitiesEdit] = useState(false);
+  const [coActivitiesValue, setCoActivitiesValue] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -37,6 +42,7 @@ export default function StaffRecommendationDetail() {
       const res = await recommendationAPI.getById(id);
       setRequest(res.data);
       setStaffNotes(res.data.staff_notes || '');
+      setCoActivitiesValue(res.data.co_curricular_activities || '');
     } catch (error) {
       toast.error('Failed to load request details');
       navigate('/staff');
@@ -46,10 +52,26 @@ export default function StaffRecommendationDetail() {
   };
 
   const handleStatusUpdate = async (newStatus) => {
+    // Prompt for note before updating status
+    setPendingStatus(newStatus);
+    setStatusNote('');
+    setStatusUpdateDialogOpen(true);
+  };
+
+  const confirmStatusUpdate = async () => {
+    if (!statusNote.trim()) {
+      toast.error('Please provide a note for the status change');
+      return;
+    }
+
     setUpdating(true);
     try {
-      await recommendationAPI.update(id, { status: newStatus });
-      toast.success(`Status updated to ${newStatus}`);
+      await recommendationAPI.update(id, { 
+        status: pendingStatus,
+        note: statusNote 
+      });
+      toast.success(`Status updated to ${pendingStatus}`);
+      setStatusUpdateDialogOpen(false);
       fetchData();
     } catch (error) {
       toast.error('Failed to update status');
