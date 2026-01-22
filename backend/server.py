@@ -246,6 +246,7 @@ class RecommendationRequestUpdate(BaseModel):
     phone_number: Optional[str] = None
     address: Optional[str] = None
     years_attended: Optional[List[dict]] = None
+    enrollment_status: Optional[str] = None
     last_form_class: Optional[str] = None
     institution_name: Optional[str] = None
     institution_address: Optional[str] = None
