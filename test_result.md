@@ -435,7 +435,11 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Staff Dashboard - Clickable Stats Tiles (P1)"
+    - "Staff Dashboard - Export Functionality (P1)"
+    - "Admin Dashboard - Verify Charts (P2)"
+    - "Critical Bug Verification (P0)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
