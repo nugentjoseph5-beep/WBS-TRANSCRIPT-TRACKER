@@ -1563,6 +1563,377 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
+# ==================== EXPORT/REPORTING ENDPOINTS ====================
+
+def format_date_for_export(date_str):
+    """Format date string for export"""
+    try:
+        if date_str:
+            dt = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+            return dt.strftime("%Y-%m-%d %H:%M")
+    except:
+        pass
+    return date_str or ""
+
+def format_years_for_export(years_data):
+    """Format years attended/academic years for export"""
+    if isinstance(years_data, list):
+        return ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in years_data])
+    return str(years_data) if years_data else ""
+
+@api_router.get("/export/transcripts/{format_type}")
+async def export_transcript_requests(format_type: str, status: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """Export transcript requests as DOCX, PDF, or XLSX"""
+    if current_user["role"] not in ["admin", "staff"]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    # Build query
+    query = {}
+    if current_user["role"] == "staff":
+        query["assigned_staff_id"] = current_user["id"]
+    if status and status != "all":
+        query["status"] = status
+    
+    requests = await db.transcript_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    
+    if format_type == "xlsx":
+        return generate_transcript_xlsx(requests)
+    elif format_type == "pdf":
+        return generate_transcript_pdf(requests)
+    elif format_type == "docx":
+        return generate_transcript_docx(requests)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid format. Use xlsx, pdf, or docx")
+
+@api_router.get("/export/recommendations/{format_type}")
+async def export_recommendation_requests(format_type: str, status: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """Export recommendation requests as DOCX, PDF, or XLSX"""
+    if current_user["role"] not in ["admin", "staff"]:
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    
+    # Build query
+    query = {}
+    if current_user["role"] == "staff":
+        query["assigned_staff_id"] = current_user["id"]
+    if status and status != "all":
+        query["status"] = status
+    
+    requests = await db.recommendation_requests.find(query, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    
+    if format_type == "xlsx":
+        return generate_recommendation_xlsx(requests)
+    elif format_type == "pdf":
+        return generate_recommendation_pdf(requests)
+    elif format_type == "docx":
+        return generate_recommendation_docx(requests)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid format. Use xlsx, pdf, or docx")
+
+def generate_transcript_xlsx(requests):
+    """Generate XLSX file for transcript requests"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Transcript Requests"
+    
+    # Headers
+    headers = ["ID", "Student Name", "Email", "School ID", "Status", "Academic Years", 
+               "Collection Method", "Institution", "Needed By", "Assigned Staff", "Created At"]
+    
+    # Style headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="800000", end_color="800000", fill_type="solid")
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Data rows
+    for row_num, req in enumerate(requests, 2):
+        ws.cell(row=row_num, column=1, value=req.get("id", "")[:8])
+        ws.cell(row=row_num, column=2, value=req.get("student_name", ""))
+        ws.cell(row=row_num, column=3, value=req.get("student_email", ""))
+        ws.cell(row=row_num, column=4, value=req.get("school_id", ""))
+        ws.cell(row=row_num, column=5, value=req.get("status", ""))
+        ws.cell(row=row_num, column=6, value=format_years_for_export(req.get("academic_years", req.get("academic_year", ""))))
+        ws.cell(row=row_num, column=7, value=req.get("collection_method", ""))
+        ws.cell(row=row_num, column=8, value=req.get("institution_name", ""))
+        ws.cell(row=row_num, column=9, value=format_date_for_export(req.get("needed_by_date", "")))
+        ws.cell(row=row_num, column=10, value=req.get("assigned_staff_name", "Unassigned"))
+        ws.cell(row=row_num, column=11, value=format_date_for_export(req.get("created_at", "")))
+    
+    # Adjust column widths
+    for col in ws.columns:
+        max_length = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(max_length + 2, 40)
+    
+    # Save to buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=transcript_requests_{datetime.now().strftime('%Y%m%d')}.xlsx"}
+    )
+
+def generate_transcript_pdf(requests):
+    """Generate PDF file for transcript requests"""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=30, bottomMargin=30)
+    
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], alignment=1, spaceAfter=20)
+    elements.append(Paragraph("Transcript Requests Report", title_style))
+    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Table data
+    data = [["ID", "Student", "Status", "Academic Years", "Collection", "Institution", "Needed By", "Staff"]]
+    
+    for req in requests:
+        data.append([
+            req.get("id", "")[:8],
+            req.get("student_name", ""),
+            req.get("status", ""),
+            format_years_for_export(req.get("academic_years", req.get("academic_year", "")))[:20],
+            req.get("collection_method", ""),
+            (req.get("institution_name", "") or "")[:20],
+            format_date_for_export(req.get("needed_by_date", ""))[:10],
+            (req.get("assigned_staff_name", "") or "Unassigned")[:15]
+        ])
+    
+    # Create table
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.5, 0, 0)),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=transcript_requests_{datetime.now().strftime('%Y%m%d')}.pdf"}
+    )
+
+def generate_transcript_docx(requests):
+    """Generate DOCX file for transcript requests"""
+    doc = Document()
+    
+    # Title
+    title = doc.add_heading('Transcript Requests Report', 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    doc.add_paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    doc.add_paragraph(f"Total Requests: {len(requests)}")
+    doc.add_paragraph()
+    
+    # Create table
+    table = doc.add_table(rows=1, cols=7)
+    table.style = 'Table Grid'
+    
+    # Headers
+    headers = ["Student", "Status", "Academic Years", "Collection", "Institution", "Needed By", "Staff"]
+    hdr_cells = table.rows[0].cells
+    for i, header in enumerate(headers):
+        hdr_cells[i].text = header
+        hdr_cells[i].paragraphs[0].runs[0].bold = True
+    
+    # Data rows
+    for req in requests:
+        row_cells = table.add_row().cells
+        row_cells[0].text = req.get("student_name", "")
+        row_cells[1].text = req.get("status", "")
+        row_cells[2].text = format_years_for_export(req.get("academic_years", req.get("academic_year", "")))
+        row_cells[3].text = req.get("collection_method", "")
+        row_cells[4].text = req.get("institution_name", "") or ""
+        row_cells[5].text = format_date_for_export(req.get("needed_by_date", ""))[:10]
+        row_cells[6].text = req.get("assigned_staff_name", "") or "Unassigned"
+    
+    # Save to buffer
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename=transcript_requests_{datetime.now().strftime('%Y%m%d')}.docx"}
+    )
+
+def generate_recommendation_xlsx(requests):
+    """Generate XLSX file for recommendation requests"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Recommendation Requests"
+    
+    # Headers
+    headers = ["ID", "Student Name", "Email", "Status", "Years Attended", "Form Class",
+               "Institution", "Program", "Collection Method", "Needed By", "Assigned Staff", "Created At"]
+    
+    # Style headers
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="DAA520", end_color="DAA520", fill_type="solid")
+    
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Data rows
+    for row_num, req in enumerate(requests, 2):
+        ws.cell(row=row_num, column=1, value=req.get("id", "")[:8])
+        ws.cell(row=row_num, column=2, value=req.get("student_name", ""))
+        ws.cell(row=row_num, column=3, value=req.get("student_email", ""))
+        ws.cell(row=row_num, column=4, value=req.get("status", ""))
+        ws.cell(row=row_num, column=5, value=format_years_for_export(req.get("years_attended", req.get("years_attended_str", ""))))
+        ws.cell(row=row_num, column=6, value=req.get("last_form_class", ""))
+        ws.cell(row=row_num, column=7, value=req.get("institution_name", ""))
+        ws.cell(row=row_num, column=8, value=req.get("program_name", ""))
+        ws.cell(row=row_num, column=9, value=req.get("collection_method", ""))
+        ws.cell(row=row_num, column=10, value=format_date_for_export(req.get("needed_by_date", "")))
+        ws.cell(row=row_num, column=11, value=req.get("assigned_staff_name", "Unassigned"))
+        ws.cell(row=row_num, column=12, value=format_date_for_export(req.get("created_at", "")))
+    
+    # Adjust column widths
+    for col in ws.columns:
+        max_length = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(max_length + 2, 40)
+    
+    # Save to buffer
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=recommendation_requests_{datetime.now().strftime('%Y%m%d')}.xlsx"}
+    )
+
+def generate_recommendation_pdf(requests):
+    """Generate PDF file for recommendation requests"""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=30, bottomMargin=30)
+    
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], alignment=1, spaceAfter=20)
+    elements.append(Paragraph("Recommendation Letter Requests Report", title_style))
+    elements.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Table data
+    data = [["ID", "Student", "Status", "Years", "Institution", "Program", "Collection", "Needed By", "Staff"]]
+    
+    for req in requests:
+        data.append([
+            req.get("id", "")[:8],
+            req.get("student_name", ""),
+            req.get("status", ""),
+            format_years_for_export(req.get("years_attended", req.get("years_attended_str", "")))[:15],
+            (req.get("institution_name", "") or "")[:18],
+            (req.get("program_name", "") or "")[:18],
+            req.get("collection_method", ""),
+            format_date_for_export(req.get("needed_by_date", ""))[:10],
+            (req.get("assigned_staff_name", "") or "Unassigned")[:12]
+        ])
+    
+    # Create table
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.85, 0.65, 0.13)),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.lightyellow),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    elements.append(table)
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=recommendation_requests_{datetime.now().strftime('%Y%m%d')}.pdf"}
+    )
+
+def generate_recommendation_docx(requests):
+    """Generate DOCX file for recommendation requests"""
+    doc = Document()
+    
+    # Title
+    title = doc.add_heading('Recommendation Letter Requests Report', 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    doc.add_paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    doc.add_paragraph(f"Total Requests: {len(requests)}")
+    doc.add_paragraph()
+    
+    # Create table
+    table = doc.add_table(rows=1, cols=8)
+    table.style = 'Table Grid'
+    
+    # Headers
+    headers = ["Student", "Status", "Years", "Form Class", "Institution", "Program", "Needed By", "Staff"]
+    hdr_cells = table.rows[0].cells
+    for i, header in enumerate(headers):
+        hdr_cells[i].text = header
+        hdr_cells[i].paragraphs[0].runs[0].bold = True
+    
+    # Data rows
+    for req in requests:
+        row_cells = table.add_row().cells
+        row_cells[0].text = req.get("student_name", "")
+        row_cells[1].text = req.get("status", "")
+        row_cells[2].text = format_years_for_export(req.get("years_attended", req.get("years_attended_str", "")))
+        row_cells[3].text = req.get("last_form_class", "")
+        row_cells[4].text = req.get("institution_name", "") or ""
+        row_cells[5].text = req.get("program_name", "") or ""
+        row_cells[6].text = format_date_for_export(req.get("needed_by_date", ""))[:10]
+        row_cells[7].text = req.get("assigned_staff_name", "") or "Unassigned"
+    
+    # Save to buffer
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename=recommendation_requests_{datetime.now().strftime('%Y%m%d')}.docx"}
+    )
+
 # ==================== SEED DEFAULT ADMIN ====================
 
 @app.on_event("startup")
