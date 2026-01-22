@@ -187,7 +187,8 @@ export default function AdminRequests() {
 
   const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/admin/requests', icon: FileText, label: 'Requests' },
+    { path: '/admin/requests', icon: FileText, label: 'Transcripts' },
+    { path: '/admin/recommendations', icon: Award, label: 'Recommendations' },
     { path: '/admin/users', icon: Users, label: 'Users' },
   ];
 
