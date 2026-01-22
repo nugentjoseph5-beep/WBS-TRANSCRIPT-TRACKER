@@ -391,6 +391,66 @@ async def check_and_notify_overdue_requests():
         except Exception as e:
             print(f"Error notifying overdue request: {e}")
 
+def normalize_recommendation_data(request_data: dict) -> dict:
+    """Normalize recommendation request data for backward compatibility"""
+    # Handle years_attended field migration from string to list
+    if "years_attended" in request_data:
+        years_attended = request_data["years_attended"]
+        if isinstance(years_attended, str):
+            # Convert old string format to new list format
+            if years_attended and years_attended != "":
+                # Handle formats like "2015-2020" or "2015-2020, 2021-2022"
+                years_list = []
+                for year_range in years_attended.split(", "):
+                    if "-" in year_range:
+                        from_year, to_year = year_range.split("-", 1)
+                        years_list.append({"from_year": from_year.strip(), "to_year": to_year.strip()})
+                request_data["years_attended"] = years_list
+                request_data["years_attended_str"] = years_attended
+            else:
+                request_data["years_attended"] = []
+                request_data["years_attended_str"] = ""
+        elif isinstance(years_attended, list):
+            # Already in new format, create string version for backward compatibility
+            years_str = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in years_attended])
+            request_data["years_attended_str"] = years_str
+    
+    # Ensure all required fields have default values
+    if "co_curricular_activities" not in request_data:
+        request_data["co_curricular_activities"] = ""
+    if "delivery_address" not in request_data:
+        request_data["delivery_address"] = ""
+    
+    return request_data
+
+def normalize_transcript_data(request_data: dict) -> dict:
+    """Normalize transcript request data for backward compatibility"""
+    # Handle academic_years field migration from string to list
+    if "academic_years" in request_data:
+        academic_years = request_data["academic_years"]
+        if isinstance(academic_years, str) or academic_years is None:
+            # Convert old string format to new list format
+            if "academic_year" in request_data and request_data["academic_year"]:
+                # Use the legacy academic_year field
+                year_range = request_data["academic_year"]
+                if "-" in year_range:
+                    from_year, to_year = year_range.split("-", 1)
+                    request_data["academic_years"] = [{"from_year": from_year.strip(), "to_year": to_year.strip()}]
+                else:
+                    request_data["academic_years"] = []
+            else:
+                request_data["academic_years"] = []
+        elif isinstance(academic_years, list):
+            # Already in new format, create string version for backward compatibility
+            years_str = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in academic_years])
+            request_data["academic_year"] = years_str
+    
+    # Ensure all required fields have default values
+    if "delivery_address" not in request_data:
+        request_data["delivery_address"] = ""
+    
+    return request_data
+
 async def notify_status_change(request_data: dict, old_status: str, new_status: str):
     student = await db.users.find_one({"id": request_data["student_id"]}, {"_id": 0})
     if not student:
