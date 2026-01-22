@@ -194,6 +194,7 @@ class AnalyticsResponse(BaseModel):
     overdue_requests: int
     requests_by_month: List[dict]
     requests_by_enrollment: List[dict]
+    recommendations_by_enrollment: List[dict]
     requests_by_collection_method: List[dict]
     staff_workload: List[dict]
     overdue_by_days: List[dict]
@@ -1770,6 +1771,7 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
         overdue_requests=overdue_count,
         requests_by_month=requests_by_month,
         requests_by_enrollment=requests_by_enrollment,
+        recommendations_by_enrollment=recommendations_by_enrollment,
         requests_by_collection_method=requests_by_collection_method,
         staff_workload=staff_workload,
         overdue_by_days=overdue_by_days_list,
