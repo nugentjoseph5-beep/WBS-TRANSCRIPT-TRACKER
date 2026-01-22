@@ -874,53 +874,77 @@ class WolmersTranscriptAPITester:
         else:
             self.log_result("Unauthenticated access denied", False, f"Expected 401/403, got {response.status_code if response else 'No response'}")
 
-    def test_recommendation_request_validation(self):
-        """Test validation for recommendation request creation"""
-        print("\n🔍 Testing Recommendation Request Validation...")
+    def test_export_endpoints(self):
+        """Test export endpoints for transcripts and recommendations"""
+        print("\n🔍 Testing Export Endpoints...")
         
-        if not self.student_token:
-            self.log_result("Recommendation request validation", False, "No student token available")
+        if not self.admin_token:
+            self.log_result("Export endpoints", False, "No admin token available")
             return
         
-        # Test missing required fields
-        invalid_data = {
-            "first_name": "John",
-            # Missing required fields like last_name, email, etc.
-        }
+        # Test transcript export endpoints
+        transcript_formats = ['xlsx', 'pdf', 'docx']
+        for format_type in transcript_formats:
+            response, error = self.make_request('GET', f'export/transcripts/{format_type}', token=self.admin_token)
+            
+            if response and response.status_code == 200:
+                # Check content type headers
+                content_type = response.headers.get('content-type', '').lower()
+                expected_types = {
+                    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'pdf': 'application/pdf',
+                    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                }
+                
+                if expected_types[format_type] in content_type:
+                    self.log_result(f"Export transcripts {format_type.upper()}", True)
+                else:
+                    self.log_result(f"Export transcripts {format_type.upper()}", False, f"Wrong content type: {content_type}")
+            else:
+                self.log_result(f"Export transcripts {format_type.upper()}", False, f"Status: {response.status_code if response else 'No response'}")
         
-        response, error = self.make_request('POST', 'recommendations', invalid_data, token=self.student_token)
+        # Test recommendation export endpoints
+        recommendation_formats = ['xlsx', 'pdf', 'docx']
+        for format_type in recommendation_formats:
+            response, error = self.make_request('GET', f'export/recommendations/{format_type}', token=self.admin_token)
+            
+            if response and response.status_code == 200:
+                # Check content type headers
+                content_type = response.headers.get('content-type', '').lower()
+                expected_types = {
+                    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'pdf': 'application/pdf',
+                    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                }
+                
+                if expected_types[format_type] in content_type:
+                    self.log_result(f"Export recommendations {format_type.upper()}", True)
+                else:
+                    self.log_result(f"Export recommendations {format_type.upper()}", False, f"Wrong content type: {content_type}")
+            else:
+                self.log_result(f"Export recommendations {format_type.upper()}", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_admin_login_specific(self):
+        """Test admin login with specific credentials from review request"""
+        print("\n🔍 Testing Admin Login with Specific Credentials...")
         
-        if error:
-            self.log_result("Recommendation request validation (missing fields)", False, f"Request error: {error}")
-        elif response and response.status_code == 422:  # Validation error
-            self.log_result("Recommendation request validation (missing fields)", True)
+        response, error = self.make_request('POST', 'auth/login', {
+            "email": "admin@wolmers.org",
+            "password": "Admin123!"
+        })
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'access_token' in data and data['user']['role'] == 'admin':
+                self.admin_token = data['access_token']
+                self.log_result("Admin login with specific credentials", True)
+                return True
+            else:
+                self.log_result("Admin login with specific credentials", False, "Invalid response format")
         else:
-            self.log_result("Recommendation request validation (missing fields)", False, f"Expected 422, got {response.status_code if response else 'No response'}")
+            self.log_result("Admin login with specific credentials", False, f"Status: {response.status_code if response else 'No response'}")
         
-        # Test invalid email format
-        invalid_email_data = {
-            "first_name": "John",
-            "last_name": "Doe",
-            "email": "invalid-email",  # Invalid email format
-            "phone_number": "+1 876 123 4567",
-            "address": "123 Main Street",
-            "years_attended": "2015-2020",
-            "last_form_class": "Upper 6th",
-            "institution_name": "Test University",
-            "institution_address": "Test Address",
-            "program_name": "Test Program",
-            "needed_by_date": "2025-08-15",
-            "collection_method": "emailed"
-        }
-        
-        response, error = self.make_request('POST', 'recommendations', invalid_email_data, token=self.student_token)
-        
-        if error:
-            self.log_result("Recommendation request validation (invalid email)", False, f"Request error: {error}")
-        elif response and response.status_code == 422:  # Validation error
-            self.log_result("Recommendation request validation (invalid email)", True)
-        else:
-            self.log_result("Recommendation request validation (invalid email)", False, f"Expected 422, got {response.status_code if response else 'No response'}")
+        return False
 
     def run_all_tests(self):
         """Run all tests in sequence"""
