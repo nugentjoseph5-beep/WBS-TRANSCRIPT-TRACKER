@@ -224,14 +224,17 @@ class RecommendationRequestResponse(BaseModel):
     email: str
     phone_number: str
     address: str
-    years_attended: str
+    years_attended: List[dict] = []  # List of {"from_year": "2015", "to_year": "2020"}
+    years_attended_str: str = ""  # Legacy string format for backward compatibility
     last_form_class: str
+    co_curricular_activities: str = ""
     institution_name: str
     institution_address: str
     directed_to: str
     program_name: str
     needed_by_date: str
     collection_method: str
+    delivery_address: str = ""
     status: str
     assigned_staff_id: Optional[str] = None
     assigned_staff_name: Optional[str] = None
