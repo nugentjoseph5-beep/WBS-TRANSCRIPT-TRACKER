@@ -606,7 +606,7 @@ export default function AdminDashboard() {
                       Overdue Requests
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent id="overdue-requests-chart">
                     <ResponsiveContainer width="100%" height={250}>
                       <BarChart data={overdueComparison} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" />
