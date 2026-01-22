@@ -220,6 +220,7 @@ class RecommendationRequestCreate(BaseModel):
     phone_number: str
     address: str
     years_attended: List[dict]  # List of {"from_year": "2015", "to_year": "2020"}
+    enrollment_status: str  # Enrolled, Graduate, Withdrawn
     last_form_class: str  # e.g., "6th Form" or "Upper 6"
     co_curricular_activities: Optional[str] = ""  # Positions of responsibility and activities
     institution_name: str
