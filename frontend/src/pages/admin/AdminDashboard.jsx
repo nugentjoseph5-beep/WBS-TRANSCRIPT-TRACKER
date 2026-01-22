@@ -546,7 +546,7 @@ export default function AdminDashboard() {
                   <CardHeader>
                     <CardTitle className="font-heading text-lg">Transcripts by Enrollment Status</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent id="transcript-enrollment-chart">
                     {enrollmentData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
