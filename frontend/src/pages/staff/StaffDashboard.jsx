@@ -248,31 +248,46 @@ export default function StaffDashboard() {
           <TabsContent value="transcripts" className="space-y-6">
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-gold-300"
+                onClick={() => setStatusFilter('all')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">Total</p>
                   <p className="text-2xl font-bold text-stone-900">{transcriptStats.total}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-yellow-300"
+                onClick={() => setStatusFilter('Pending')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">Pending</p>
                   <p className="text-2xl font-bold text-yellow-600">{transcriptStats.pending}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-blue-300"
+                onClick={() => setStatusFilter('In Progress')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">In Progress</p>
                   <p className="text-2xl font-bold text-blue-600">{transcriptStats.inProgress}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-cyan-300"
+                onClick={() => setStatusFilter('Ready')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">Ready</p>
                   <p className="text-2xl font-bold text-cyan-600">{transcriptStats.ready}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-green-300"
+                onClick={() => setStatusFilter('Completed')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">Completed</p>
                   <p className="text-2xl font-bold text-green-600">{transcriptStats.completed}</p>
@@ -372,31 +387,46 @@ export default function StaffDashboard() {
           <TabsContent value="recommendations" className="space-y-6">
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-gold-300"
+                onClick={() => setStatusFilter('all')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">Total</p>
                   <p className="text-2xl font-bold text-stone-900">{recommendationStats.total}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-yellow-300"
+                onClick={() => setStatusFilter('Pending')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">Pending</p>
                   <p className="text-2xl font-bold text-yellow-600">{recommendationStats.pending}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-blue-300"
+                onClick={() => setStatusFilter('In Progress')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">In Progress</p>
                   <p className="text-2xl font-bold text-blue-600">{recommendationStats.inProgress}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-cyan-300"
+                onClick={() => setStatusFilter('Ready')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">Ready</p>
                   <p className="text-2xl font-bold text-cyan-600">{recommendationStats.ready}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-white">
+              <Card 
+                className="bg-white cursor-pointer hover:shadow-lg transition-shadow hover:border-green-300"
+                onClick={() => setStatusFilter('Completed')}
+              >
                 <CardContent className="p-4">
                   <p className="text-sm text-stone-500">Completed</p>
                   <p className="text-2xl font-bold text-green-600">{recommendationStats.completed}</p>
