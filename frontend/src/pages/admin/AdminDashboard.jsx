@@ -667,7 +667,7 @@ export default function AdminDashboard() {
                       Staff Workload Distribution
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent id="staff-workload-chart">
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={staffWorkloadData}>
                         <CartesianGrid strokeDasharray="3 3" />
