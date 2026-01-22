@@ -846,7 +846,9 @@ async def get_requests(current_user: dict = Depends(get_current_user)):
         # Admin can see all requests
         requests = await db.transcript_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     
-    return [TranscriptRequestResponse(**r) for r in requests]
+    # Normalize data for backward compatibility
+    normalized_requests = [normalize_transcript_data(r) for r in requests]
+    return [TranscriptRequestResponse(**r) for r in normalized_requests]
 
 @api_router.get("/requests/all", response_model=List[TranscriptRequestResponse])
 async def get_all_requests(current_user: dict = Depends(get_current_user)):
@@ -854,7 +856,9 @@ async def get_all_requests(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
     
     requests = await db.transcript_requests.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
-    return [TranscriptRequestResponse(**r) for r in requests]
+    # Normalize data for backward compatibility
+    normalized_requests = [normalize_transcript_data(r) for r in requests]
+    return [TranscriptRequestResponse(**r) for r in normalized_requests]
 
 @api_router.get("/requests/{request_id}", response_model=TranscriptRequestResponse)
 async def get_request(request_id: str, current_user: dict = Depends(get_current_user)):
@@ -866,7 +870,9 @@ async def get_request(request_id: str, current_user: dict = Depends(get_current_
     if current_user["role"] == "student" and request_doc["student_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="You can only view your own requests")
     
-    return TranscriptRequestResponse(**request_doc)
+    # Normalize data for backward compatibility
+    normalized_request = normalize_transcript_data(request_doc)
+    return TranscriptRequestResponse(**normalized_request)
 
 class StudentRequestUpdate(BaseModel):
     first_name: Optional[str] = None
