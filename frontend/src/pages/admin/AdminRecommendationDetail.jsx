@@ -126,6 +126,20 @@ export default function AdminRecommendationDetail() {
     }
   };
 
+  const handleSaveCoActivities = async () => {
+    setUpdating(true);
+    try {
+      await recommendationAPI.update(id, { co_curricular_activities: coActivitiesValue });
+      toast.success('Co-curricular activities updated successfully');
+      setCoActivitiesEdit(false);
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to update co-curricular activities');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
