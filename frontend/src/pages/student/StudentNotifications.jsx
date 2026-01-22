@@ -136,7 +136,13 @@ export default function StudentNotifications() {
                           </div>
                           <div className="flex items-center gap-2">
                             {notification.request_id && (
-                              <Link to={`/student/request/${notification.request_id}`}>
+                              <Link 
+                                to={
+                                  notification.type?.includes('recommendation') 
+                                    ? `/student/recommendation/${notification.request_id}`
+                                    : `/student/request/${notification.request_id}`
+                                }
+                              >
                                 <Button variant="ghost" size="sm">
                                   View
                                 </Button>
