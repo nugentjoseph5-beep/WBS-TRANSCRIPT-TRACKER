@@ -1329,10 +1329,12 @@ async def update_recommendation_request(request_id: str, update_data: Recommenda
     
     if update_data.status:
         updates["status"] = update_data.status
+        # Use the provided note or create a default one
+        note_text = update_data.note if update_data.note else f"Status changed to {update_data.status}"
         timeline_entry = {
             "status": update_data.status,
             "timestamp": now,
-            "note": f"Status changed to {update_data.status}",
+            "note": note_text,
             "updated_by": current_user["full_name"]
         }
         await db.recommendation_requests.update_one(
