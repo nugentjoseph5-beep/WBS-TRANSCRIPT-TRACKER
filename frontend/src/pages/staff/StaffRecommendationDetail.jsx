@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { formatDate, formatDateTime, getStatusBadgeClass } from '@/lib/utils';
+import { formatDate, formatDateTime, getStatusBadgeClass, getStatusColor } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
   ArrowLeft, FileText, User, Mail, Phone, MapPin, 
@@ -540,7 +540,10 @@ export default function StaffRecommendationDetail() {
                 <div className="space-y-4">
                   {request.timeline?.map((entry, index) => (
                     <div key={index} className="relative pl-6 pb-4 border-l-2 border-stone-200 last:border-l-0 last:pb-0">
-                      <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-gold-500"></div>
+                      <div 
+                        className="absolute -left-[9px] top-0 w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: getStatusColor(entry.status) }}
+                      ></div>
                       <div>
                         <p className="font-medium text-sm">{entry.status}</p>
                         <p className="text-xs text-stone-500">{entry.note}</p>
