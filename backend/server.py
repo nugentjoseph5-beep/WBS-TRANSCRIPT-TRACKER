@@ -1373,6 +1373,9 @@ async def update_recommendation_request(request_id: str, update_data: Recommenda
     if update_data.staff_notes:
         updates["staff_notes"] = update_data.staff_notes
     
+    if update_data.co_curricular_activities is not None:
+        updates["co_curricular_activities"] = update_data.co_curricular_activities
+    
     await db.recommendation_requests.update_one({"id": request_id}, {"$set": updates})
     
     # Notify student of status change
