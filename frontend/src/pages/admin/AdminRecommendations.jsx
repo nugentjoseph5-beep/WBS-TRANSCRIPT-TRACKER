@@ -34,6 +34,7 @@ export default function AdminRecommendations() {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState('');
   const [assigning, setAssigning] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -62,6 +63,29 @@ export default function AdminRecommendations() {
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async (format) => {
+    setExportLoading(true);
+    try {
+      const status = statusFilter !== 'all' ? statusFilter : null;
+      const response = await exportAPI.recommendations(format, status);
+      
+      const blob = new Blob([response.data], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `recommendation_requests_${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Report downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to export report');
+    } finally {
+      setExportLoading(false);
     }
   };
 
