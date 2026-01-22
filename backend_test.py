@@ -1209,6 +1209,411 @@ class WolmersTranscriptAPITester:
         # Final verification: Check that the workflow completed without errors
         self.log_result("Recommendation Workflow - Complete End-to-End", True)
 
+    def test_transcript_status_notes(self):
+        """Test 1: Transcript Status Notes - Custom notes in timeline"""
+        print("\n🔍 Testing Transcript Status Notes...")
+        
+        if not all([self.student_token, self.admin_token, self.staff_token]):
+            self.log_result("Transcript Status Notes", False, "Missing required tokens")
+            return None
+        
+        # Create transcript request as student
+        needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        request_data = {
+            "first_name": "Status",
+            "middle_name": "Notes",
+            "last_name": "Test",
+            "school_id": "WBS2024999",
+            "enrollment_status": "graduate",
+            "academic_years": [{"from_year": "2018", "to_year": "2023"}],
+            "wolmers_email": "status.notes.test@wolmers.org",
+            "personal_email": "status.notes@test.com",
+            "phone_number": "+1 876 555 1111",
+            "reason": "Testing status notes functionality",
+            "needed_by_date": needed_date,
+            "collection_method": "pickup"
+        }
+        
+        response, error = self.make_request('POST', 'requests', request_data, token=self.student_token)
+        
+        if not response or response.status_code != 200:
+            self.log_result("Transcript Status Notes - Create Request", False, f"Status: {response.status_code if response else 'No response'}")
+            return None
+        
+        request_id = response.json()['id']
+        self.log_result("Transcript Status Notes - Create Request", True)
+        
+        # Admin updates status with custom note
+        admin_note = "Starting to process transcript request"
+        response, error = self.make_request('PATCH', f'requests/{request_id}', {
+            "status": "In Progress",
+            "note": admin_note
+        }, token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Transcript Status Notes - Admin Update with Note", True)
+            
+            # Verify timeline contains custom note
+            response, error = self.make_request('GET', f'requests/{request_id}', token=self.admin_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                timeline = data.get('timeline', [])
+                
+                # Find the "In Progress" timeline entry
+                in_progress_entry = None
+                for entry in timeline:
+                    if entry.get('status') == 'In Progress':
+                        in_progress_entry = entry
+                        break
+                
+                if in_progress_entry:
+                    if in_progress_entry.get('note') == admin_note:
+                        self.log_result("Transcript Status Notes - Admin Custom Note in Timeline", True)
+                    else:
+                        self.log_result("Transcript Status Notes - Admin Custom Note in Timeline", False, 
+                                      f"Expected '{admin_note}', got '{in_progress_entry.get('note')}'")
+                else:
+                    self.log_result("Transcript Status Notes - Admin Custom Note in Timeline", False, "No 'In Progress' entry found in timeline")
+            else:
+                self.log_result("Transcript Status Notes - Admin Custom Note in Timeline", False, f"Status: {response.status_code if response else 'No response'}")
+        else:
+            self.log_result("Transcript Status Notes - Admin Update with Note", False, f"Status: {response.status_code if response else 'No response'}")
+            return None
+        
+        # Staff updates status with custom note
+        staff_note = "Gathering documents from archive"
+        response, error = self.make_request('PATCH', f'requests/{request_id}', {
+            "status": "Processing",
+            "note": staff_note
+        }, token=self.staff_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Transcript Status Notes - Staff Update with Note", True)
+            
+            # Verify timeline contains both entries
+            response, error = self.make_request('GET', f'requests/{request_id}', token=self.staff_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                timeline = data.get('timeline', [])
+                
+                # Find the "Processing" timeline entry
+                processing_entry = None
+                for entry in timeline:
+                    if entry.get('status') == 'Processing':
+                        processing_entry = entry
+                        break
+                
+                if processing_entry:
+                    if processing_entry.get('note') == staff_note:
+                        self.log_result("Transcript Status Notes - Staff Custom Note in Timeline", True)
+                        
+                        # Verify timeline structure
+                        required_fields = ['status', 'note', 'timestamp', 'updated_by']
+                        missing_fields = [field for field in required_fields if field not in processing_entry]
+                        
+                        if not missing_fields:
+                            self.log_result("Transcript Status Notes - Timeline Structure", True)
+                        else:
+                            self.log_result("Transcript Status Notes - Timeline Structure", False, f"Missing fields: {missing_fields}")
+                    else:
+                        self.log_result("Transcript Status Notes - Staff Custom Note in Timeline", False, 
+                                      f"Expected '{staff_note}', got '{processing_entry.get('note')}'")
+                else:
+                    self.log_result("Transcript Status Notes - Staff Custom Note in Timeline", False, "No 'Processing' entry found in timeline")
+            else:
+                self.log_result("Transcript Status Notes - Staff Custom Note in Timeline", False, f"Status: {response.status_code if response else 'No response'}")
+        else:
+            self.log_result("Transcript Status Notes - Staff Update with Note", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return request_id
+
+    def test_recommendation_status_notes(self):
+        """Test 2: Recommendation Status Notes - Custom notes in timeline"""
+        print("\n🔍 Testing Recommendation Status Notes...")
+        
+        if not all([self.student_token, self.admin_token, self.staff_token]):
+            self.log_result("Recommendation Status Notes", False, "Missing required tokens")
+            return None
+        
+        # Create recommendation request as student
+        needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        request_data = {
+            "first_name": "Recommendation",
+            "middle_name": "Status",
+            "last_name": "Notes",
+            "email": "rec.status.notes@test.com",
+            "phone_number": "+1 876 555 2222",
+            "address": "123 Status Notes Street, Kingston, Jamaica",
+            "years_attended": [{"from_year": "2017", "to_year": "2022"}],
+            "last_form_class": "Upper 6th",
+            "co_curricular_activities": "Debate Team Captain, Science Club President",
+            "institution_name": "Status Notes University",
+            "institution_address": "Status Notes University Address",
+            "directed_to": "Admissions Committee",
+            "program_name": "Computer Science",
+            "needed_by_date": needed_date,
+            "collection_method": "emailed"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', request_data, token=self.student_token)
+        
+        if not response or response.status_code != 200:
+            self.log_result("Recommendation Status Notes - Create Request", False, f"Status: {response.status_code if response else 'No response'}")
+            return None
+        
+        request_id = response.json()['id']
+        self.log_result("Recommendation Status Notes - Create Request", True)
+        
+        # Admin updates status with custom note
+        admin_note = "Reviewing student's co-curricular record"
+        response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+            "status": "In Progress",
+            "note": admin_note
+        }, token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Recommendation Status Notes - Admin Update with Note", True)
+            
+            # Verify timeline contains custom note
+            response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.admin_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                timeline = data.get('timeline', [])
+                
+                # Find the "In Progress" timeline entry
+                in_progress_entry = None
+                for entry in timeline:
+                    if entry.get('status') == 'In Progress':
+                        in_progress_entry = entry
+                        break
+                
+                if in_progress_entry:
+                    if in_progress_entry.get('note') == admin_note:
+                        self.log_result("Recommendation Status Notes - Admin Custom Note in Timeline", True)
+                    else:
+                        self.log_result("Recommendation Status Notes - Admin Custom Note in Timeline", False, 
+                                      f"Expected '{admin_note}', got '{in_progress_entry.get('note')}'")
+                else:
+                    self.log_result("Recommendation Status Notes - Admin Custom Note in Timeline", False, "No 'In Progress' entry found in timeline")
+            else:
+                self.log_result("Recommendation Status Notes - Admin Custom Note in Timeline", False, f"Status: {response.status_code if response else 'No response'}")
+        else:
+            self.log_result("Recommendation Status Notes - Admin Update with Note", False, f"Status: {response.status_code if response else 'No response'}")
+            return None
+        
+        # Staff updates status with custom note
+        staff_note = "Recommendation letter completed and signed"
+        response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+            "status": "Ready",
+            "note": staff_note
+        }, token=self.staff_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Recommendation Status Notes - Staff Update with Note", True)
+            
+            # Verify timeline contains both entries
+            response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.staff_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                timeline = data.get('timeline', [])
+                
+                # Find the "Ready" timeline entry
+                ready_entry = None
+                for entry in timeline:
+                    if entry.get('status') == 'Ready':
+                        ready_entry = entry
+                        break
+                
+                if ready_entry:
+                    if ready_entry.get('note') == staff_note:
+                        self.log_result("Recommendation Status Notes - Staff Custom Note in Timeline", True)
+                        
+                        # Verify timeline structure
+                        required_fields = ['status', 'note', 'timestamp', 'updated_by']
+                        missing_fields = [field for field in required_fields if field not in ready_entry]
+                        
+                        if not missing_fields:
+                            self.log_result("Recommendation Status Notes - Timeline Structure", True)
+                        else:
+                            self.log_result("Recommendation Status Notes - Timeline Structure", False, f"Missing fields: {missing_fields}")
+                    else:
+                        self.log_result("Recommendation Status Notes - Staff Custom Note in Timeline", False, 
+                                      f"Expected '{staff_note}', got '{ready_entry.get('note')}'")
+                else:
+                    self.log_result("Recommendation Status Notes - Staff Custom Note in Timeline", False, "No 'Ready' entry found in timeline")
+            else:
+                self.log_result("Recommendation Status Notes - Staff Custom Note in Timeline", False, f"Status: {response.status_code if response else 'No response'}")
+        else:
+            self.log_result("Recommendation Status Notes - Staff Update with Note", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return request_id
+
+    def test_co_curricular_activities_update(self):
+        """Test 3: Co-curricular Activities Update"""
+        print("\n🔍 Testing Co-curricular Activities Update...")
+        
+        if not all([self.student_token, self.admin_token, self.staff_token]):
+            self.log_result("Co-curricular Activities Update", False, "Missing required tokens")
+            return
+        
+        # Create recommendation request as student
+        needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        request_data = {
+            "first_name": "Co-curricular",
+            "middle_name": "Activities",
+            "last_name": "Test",
+            "email": "cocurricular@test.com",
+            "phone_number": "+1 876 555 3333",
+            "address": "123 Activities Street, Kingston, Jamaica",
+            "years_attended": [{"from_year": "2016", "to_year": "2021"}],
+            "last_form_class": "Upper 6th",
+            "co_curricular_activities": "Initial activities list",
+            "institution_name": "Activities University",
+            "institution_address": "Activities University Address",
+            "directed_to": "Admissions Office",
+            "program_name": "Business Administration",
+            "needed_by_date": needed_date,
+            "collection_method": "pickup"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', request_data, token=self.student_token)
+        
+        if not response or response.status_code != 200:
+            self.log_result("Co-curricular Activities Update - Create Request", False, f"Status: {response.status_code if response else 'No response'}")
+            return
+        
+        request_id = response.json()['id']
+        self.log_result("Co-curricular Activities Update - Create Request", True)
+        
+        # Test admin can update co-curricular activities
+        admin_activities = "Captain of Football Team, President of Debate Club"
+        response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+            "co_curricular_activities": admin_activities
+        }, token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Co-curricular Activities Update - Admin Update", True)
+            
+            # Verify the update
+            response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.admin_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                if data.get('co_curricular_activities') == admin_activities:
+                    self.log_result("Co-curricular Activities Update - Admin Verification", True)
+                else:
+                    self.log_result("Co-curricular Activities Update - Admin Verification", False, 
+                                  f"Expected '{admin_activities}', got '{data.get('co_curricular_activities')}'")
+            else:
+                self.log_result("Co-curricular Activities Update - Admin Verification", False, f"Status: {response.status_code if response else 'No response'}")
+        else:
+            self.log_result("Co-curricular Activities Update - Admin Update", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test staff can update co-curricular activities
+        staff_activities = "Head Boy 2020-2021, Science Fair Winner, Drama Club Member"
+        response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+            "co_curricular_activities": staff_activities
+        }, token=self.staff_token)
+        
+        if response and response.status_code == 200:
+            self.log_result("Co-curricular Activities Update - Staff Update", True)
+            
+            # Verify the update
+            response, error = self.make_request('GET', f'recommendations/{request_id}', token=self.staff_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                if data.get('co_curricular_activities') == staff_activities:
+                    self.log_result("Co-curricular Activities Update - Staff Verification", True)
+                else:
+                    self.log_result("Co-curricular Activities Update - Staff Verification", False, 
+                                  f"Expected '{staff_activities}', got '{data.get('co_curricular_activities')}'")
+            else:
+                self.log_result("Co-curricular Activities Update - Staff Verification", False, f"Status: {response.status_code if response else 'No response'}")
+        else:
+            self.log_result("Co-curricular Activities Update - Staff Update", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_timeline_display_format(self):
+        """Test 4: Timeline Display Format - Verify structure for both request types"""
+        print("\n🔍 Testing Timeline Display Format...")
+        
+        if not all([self.student_token, self.admin_token]):
+            self.log_result("Timeline Display Format", False, "Missing required tokens")
+            return
+        
+        # Test transcript timeline format
+        transcript_id = self.test_transcript_status_notes()
+        if transcript_id:
+            response, error = self.make_request('GET', f'requests/{transcript_id}', token=self.admin_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                timeline = data.get('timeline', [])
+                
+                if timeline:
+                    # Check structure of timeline entries
+                    sample_entry = timeline[-1]  # Get latest entry
+                    required_fields = ['status', 'note', 'timestamp', 'updated_by']
+                    missing_fields = [field for field in required_fields if field not in sample_entry]
+                    
+                    if not missing_fields:
+                        self.log_result("Timeline Display Format - Transcript Structure", True)
+                    else:
+                        self.log_result("Timeline Display Format - Transcript Structure", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_result("Timeline Display Format - Transcript Structure", False, "No timeline entries found")
+            else:
+                self.log_result("Timeline Display Format - Transcript Structure", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test recommendation timeline format
+        recommendation_id = self.test_recommendation_status_notes()
+        if recommendation_id:
+            response, error = self.make_request('GET', f'recommendations/{recommendation_id}', token=self.admin_token)
+            
+            if response and response.status_code == 200:
+                data = response.json()
+                timeline = data.get('timeline', [])
+                
+                if timeline:
+                    # Check structure of timeline entries
+                    sample_entry = timeline[-1]  # Get latest entry
+                    required_fields = ['status', 'note', 'timestamp', 'updated_by']
+                    missing_fields = [field for field in required_fields if field not in sample_entry]
+                    
+                    if not missing_fields:
+                        self.log_result("Timeline Display Format - Recommendation Structure", True)
+                    else:
+                        self.log_result("Timeline Display Format - Recommendation Structure", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_result("Timeline Display Format - Recommendation Structure", False, "No timeline entries found")
+            else:
+                self.log_result("Timeline Display Format - Recommendation Structure", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_status_notes_functionality_comprehensive(self):
+        """Comprehensive test for status notes functionality as per review request"""
+        print("\n" + "🎯" * 30)
+        print("🎯 CRITICAL TEST: STATUS NOTES FUNCTIONALITY")
+        print("🎯" * 30)
+        
+        # Test 1: Transcript Status Notes
+        self.test_transcript_status_notes()
+        
+        # Test 2: Recommendation Status Notes  
+        self.test_recommendation_status_notes()
+        
+        # Test 3: Co-curricular Activities Update
+        self.test_co_curricular_activities_update()
+        
+        # Test 4: Timeline Display Format
+        self.test_timeline_display_format()
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting Wolmer's Transcript Tracker API Tests")
