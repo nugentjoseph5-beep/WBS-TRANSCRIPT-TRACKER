@@ -1357,11 +1357,11 @@ async def update_recommendation_request(request_id: str, update_data: Recommenda
     
     # Check permissions
     if current_user["role"] == "student":
-        # Students can only update their own requests and only if status is Pending
+        # Students can only update their own requests and only if status is Pending or In Progress
         if request_doc["student_id"] != current_user["id"]:
             raise HTTPException(status_code=403, detail="You can only update your own requests")
-        if request_doc["status"] != "Pending":
-            raise HTTPException(status_code=403, detail="You can only edit pending requests")
+        if request_doc["status"] not in ["Pending", "In Progress"]:
+            raise HTTPException(status_code=403, detail=f"You cannot edit requests at the '{request_doc['status']}' stage. Please contact administration for assistance.")
         # Students cannot change status, assign staff, or reject
         if update_data.status or update_data.assigned_staff_id or update_data.rejection_reason:
             raise HTTPException(status_code=403, detail="Students cannot update request status or assignments")
