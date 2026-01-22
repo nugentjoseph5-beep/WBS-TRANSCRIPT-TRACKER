@@ -1391,6 +1391,21 @@ async def update_recommendation_request(request_id: str, update_data: Recommenda
         if staff:
             updates["assigned_staff_id"] = update_data.assigned_staff_id
             updates["assigned_staff_name"] = staff["full_name"]
+            
+            # Auto-update status to "In Progress" when staff is assigned
+            if request_doc.get("status") == "Pending":
+                updates["status"] = "In Progress"
+                timeline_entry = {
+                    "status": "In Progress",
+                    "timestamp": now,
+                    "note": "Request assigned to staff - Status automatically updated to In Progress",
+                    "updated_by": current_user["full_name"]
+                }
+                await db.recommendation_requests.update_one(
+                    {"id": request_id},
+                    {"$push": {"timeline": timeline_entry}}
+                )
+            
             # Notify staff
             await create_notification(
                 staff["id"],
