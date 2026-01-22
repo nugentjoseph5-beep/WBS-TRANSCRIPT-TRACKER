@@ -1218,27 +1218,44 @@ class WolmersTranscriptAPITester:
         # Basic health checks
         self.test_health_check()
         
-        # Authentication tests - PRIORITY: Test specific admin credentials
+        # Authentication tests - PRIORITY: Test specific credentials from review request
         print("\n" + "🎯" * 20)
-        print("🎯 PRIORITY: ADMIN LOGIN TEST")
+        print("🎯 PRIORITY: REVIEW REQUEST AUTHENTICATION TESTS")
         print("🎯" * 20)
         admin_login_success = self.test_admin_login_specific()
+        staff_login_success = self.test_staff_login_specific()
+        student_login_success = self.test_student_login_specific()
         
-        student_reg_success = self.test_student_registration()
-        
-        if not student_reg_success:
-            # Try login if registration failed (user might already exist)
-            self.test_student_login()
+        # If specific logins failed, try creating users
+        if not student_login_success:
+            student_reg_success = self.test_student_registration()
+            if not student_reg_success:
+                self.test_student_login()
         
         # User management tests
         if admin_login_success:
-            self.test_create_staff_user()
-            self.test_staff_login()
+            if not staff_login_success:
+                self.test_create_staff_user()
+                self.test_staff_login()
             self.test_user_management()
             self.test_analytics()
         
         # Test auth/me for all roles
         self.test_auth_me()
+        
+        # PRIORITY: Test BUG FIXES from review request
+        print("\n" + "🎯" * 20)
+        print("🎯 PRIORITY: BUG FIXES TESTING")
+        print("🎯" * 20)
+        
+        # Test Years Attended Display Fix
+        rec_request_id = self.test_years_attended_display_fix()
+        
+        # Test Student Dashboard Recommendation Data
+        self.test_student_dashboard_recommendation_data()
+        
+        # Test Recommendation Workflow Bug Verification
+        self.test_recommendation_workflow_bug_verification()
         
         # PRIORITY: Test NEW FIELDS for transcript and recommendation requests
         print("\n" + "🎯" * 20)
@@ -1250,7 +1267,8 @@ class WolmersTranscriptAPITester:
         self.test_get_requests()
         
         # Recommendation letter request tests with NEW FIELDS
-        rec_request_id = self.test_create_recommendation_request()
+        if not rec_request_id:
+            rec_request_id = self.test_create_recommendation_request()
         self.test_get_recommendation_requests()
         self.test_get_specific_recommendation_request(rec_request_id)
         self.test_update_recommendation_request_status(rec_request_id)
