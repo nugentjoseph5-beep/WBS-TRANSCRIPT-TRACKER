@@ -4,7 +4,6 @@ import { useAuth } from '@/lib/auth';
 import { analyticsAPI, requestAPI, recommendationAPI, notificationAPI, exportAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate, getStatusBadgeClass } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
@@ -113,18 +112,40 @@ export default function AdminDashboard() {
   // Recommendation status data
   const recommendationStatusData = analytics ? [
     { name: 'Pending', value: analytics.pending_recommendation_requests || 0, color: '#eab308' },
+    { name: 'In Progress', value: analytics.in_progress_recommendation_requests || 0, color: '#3b82f6' },
     { name: 'Completed', value: analytics.completed_recommendation_requests || 0, color: '#22c55e' },
-    { name: 'Other', value: (analytics.total_recommendation_requests || 0) - (analytics.pending_recommendation_requests || 0) - (analytics.completed_recommendation_requests || 0), color: '#3b82f6' },
+    { name: 'Rejected', value: analytics.rejected_recommendation_requests || 0, color: '#ef4444' },
   ].filter(item => item.value > 0) : [];
 
-  // Combined comparison data
-  const comparisonData = analytics ? [
-    { name: 'Transcripts', total: analytics.total_requests || 0, pending: analytics.pending_requests || 0, completed: analytics.completed_requests || 0 },
-    { name: 'Recommendations', total: analytics.total_recommendation_requests || 0, pending: analytics.pending_recommendation_requests || 0, completed: analytics.completed_recommendation_requests || 0 },
+  // Enrollment status data for transcripts
+  const enrollmentData = analytics?.requests_by_enrollment || [];
+
+  // Collection method comparison
+  const collectionMethodComparison = analytics ? [
+    { 
+      name: 'Pickup', 
+      transcripts: analytics.requests_by_collection_method?.find(c => c.name.includes('Pickup'))?.value || 0,
+      recommendations: analytics.recommendations_by_collection_method?.find(c => c.name.includes('Pickup'))?.value || 0
+    },
+    { 
+      name: 'Emailed', 
+      transcripts: analytics.requests_by_collection_method?.find(c => c.name.includes('Email'))?.value || 0,
+      recommendations: analytics.recommendations_by_collection_method?.find(c => c.name.includes('Email'))?.value || 0
+    },
+    { 
+      name: 'Delivery', 
+      transcripts: analytics.requests_by_collection_method?.find(c => c.name.includes('Delivery'))?.value || 0,
+      recommendations: analytics.recommendations_by_collection_method?.find(c => c.name.includes('Delivery'))?.value || 0
+    },
   ] : [];
 
+  // Overdue comparison
+  const overdueComparison = [
+    { name: 'Transcripts', value: analytics?.overdue_requests || 0, color: '#ef4444' },
+    { name: 'Recommendations', value: analytics?.overdue_recommendation_requests || 0, color: '#f97316' },
+  ];
+
   const staffWorkloadData = analytics?.staff_workload || [];
-  const overdueByDaysData = analytics?.overdue_by_days || [];
 
   return (
     <div className="flex h-screen bg-stone-50" data-testid="admin-dashboard">
@@ -244,7 +265,7 @@ export default function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Transcript Reports</p>
                       <div className="flex gap-2">
@@ -362,7 +383,7 @@ export default function AdminDashboard() {
                 <Award className="h-5 w-5 text-gold-500" />
                 Recommendation Letter Requests
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                 <Card 
                   className="cursor-pointer hover:shadow-lg transition-shadow hover:border-gold-300"
                   onClick={() => handleTileClick('all', 'recommendations')}
@@ -406,57 +427,50 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
                 <Card 
-                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-blue-300"
-                  onClick={() => handleTileClick('In Progress', 'recommendations')}
+                  className="cursor-pointer hover:shadow-lg transition-shadow hover:border-red-300"
+                  onClick={() => handleTileClick('Rejected', 'recommendations')}
                 >
                   <CardContent className="p-4 md:p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-stone-500">In Progress</p>
-                        <p className="text-2xl md:text-3xl font-bold text-blue-600">
-                          {(analytics?.total_recommendation_requests || 0) - (analytics?.pending_recommendation_requests || 0) - (analytics?.completed_recommendation_requests || 0)}
+                        <p className="text-sm text-stone-500">Rejected</p>
+                        <p className="text-2xl md:text-3xl font-bold text-red-600">{analytics?.rejected_recommendation_requests || 0}</p>
+                      </div>
+                      <XCircle className="h-8 w-8 md:h-10 md:w-10 text-red-500/20" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card 
+                  className={`cursor-pointer hover:shadow-lg transition-shadow col-span-2 md:col-span-1 ${analytics?.overdue_recommendation_requests > 0 ? 'border-orange-400 bg-orange-50' : ''}`}
+                  onClick={() => handleTileClick('overdue', 'recommendations')}
+                >
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-stone-500">Overdue</p>
+                        <p className={`text-2xl md:text-3xl font-bold ${analytics?.overdue_recommendation_requests > 0 ? 'text-orange-600' : 'text-stone-400'}`}>
+                          {analytics?.overdue_recommendation_requests || 0}
                         </p>
                       </div>
-                      <TrendingUp className="h-8 w-8 md:h-10 md:w-10 text-blue-500/20" />
+                      <AlertTriangle className={`h-8 w-8 md:h-10 md:w-10 ${analytics?.overdue_recommendation_requests > 0 ? 'text-orange-500/40' : 'text-stone-300/20'}`} />
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Charts Row */}
+              {/* Charts Row 1 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Comparison Chart */}
+                {/* Enrollment Status Chart */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="font-heading text-lg">Transcripts vs Recommendations</CardTitle>
+                    <CardTitle className="font-heading text-lg">Transcripts by Enrollment Status</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={comparisonData} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="name" type="category" width={120} />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="total" fill="#800000" name="Total" />
-                        <Bar dataKey="pending" fill="#eab308" name="Pending" />
-                        <Bar dataKey="completed" fill="#22c55e" name="Completed" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Transcript Status Pie Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg">Transcript Status Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {transcriptStatusData.length > 0 ? (
+                    {enrollmentData.length > 0 ? (
                       <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                           <Pie
-                            data={transcriptStatusData}
+                            data={enrollmentData}
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
@@ -464,8 +478,8 @@ export default function AdminDashboard() {
                             paddingAngle={2}
                             dataKey="value"
                           >
-                            {transcriptStatusData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            {enrollmentData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
                           <Tooltip />
@@ -474,6 +488,88 @@ export default function AdminDashboard() {
                       </ResponsiveContainer>
                     ) : (
                       <div className="h-[300px] flex items-center justify-center text-stone-500">
+                        No data available
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Collection Method Comparison */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg">Collection Methods Comparison</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={collectionMethodComparison}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="transcripts" fill="#800000" name="Transcripts" />
+                        <Bar dataKey="recommendations" fill="#DAA520" name="Recommendations" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 2 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Overdue Comparison */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-orange-500" />
+                      Overdue Requests
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={overdueComparison} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={120} />
+                        <Tooltip />
+                        <Bar dataKey="value" name="Overdue Count">
+                          {overdueComparison.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Status Distribution Comparison */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg">Recommendation Status Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recommendationStatusData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                          <Pie
+                            data={recommendationStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={90}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {recommendationStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[250px] flex items-center justify-center text-stone-500">
                         No data available
                       </div>
                     )}
@@ -497,7 +593,7 @@ export default function AdminDashboard() {
                         <XAxis dataKey="name" />
                         <YAxis />
                         <Tooltip />
-                        <Bar dataKey="count" name="Assigned Requests">
+                        <Bar dataKey="requests" name="Assigned Requests">
                           {staffWorkloadData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={WORKLOAD_COLORS[index % WORKLOAD_COLORS.length]} />
                           ))}
