@@ -370,6 +370,20 @@ export default function StaffDashboard() {
               </Select>
             </div>
 
+            {/* Export Buttons */}
+            <div className="flex flex-wrap items-center gap-2 bg-stone-50 p-4 rounded-lg border border-stone-200">
+              <span className="text-sm text-stone-500 mr-2">Export:</span>
+              <Button size="sm" variant="outline" onClick={() => handleExportTranscripts('xlsx')} disabled={exportLoading}>
+                <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleExportTranscripts('pdf')} disabled={exportLoading}>
+                <Download className="h-4 w-4 mr-1" /> PDF
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleExportTranscripts('docx')} disabled={exportLoading}>
+                <FileType className="h-4 w-4 mr-1" /> Word
+              </Button>
+            </div>
+
             {/* Requests List */}
             <Card className="bg-white">
               <CardHeader className="border-b border-stone-100">
