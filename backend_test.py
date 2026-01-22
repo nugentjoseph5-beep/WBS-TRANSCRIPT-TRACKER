@@ -646,8 +646,8 @@ class WolmersTranscriptAPITester:
                     self.log_result(f"Auth me for {role}", False, f"Status: {response.status_code if response else 'No response'}")
 
     def test_create_recommendation_request(self):
-        """Test creating recommendation letter request"""
-        print("\n🔍 Testing Recommendation Letter Request Creation...")
+        """Test creating recommendation letter request with NEW FIELDS"""
+        print("\n🔍 Testing Recommendation Letter Request Creation with New Fields...")
         
         if not self.student_token:
             self.log_result("Create recommendation request", False, "No student token available")
@@ -655,32 +655,40 @@ class WolmersTranscriptAPITester:
         
         needed_date = (datetime.now() + timedelta(days=45)).strftime('%Y-%m-%d')
         
+        # Test with NEW ARRAY FORMAT for years_attended and co_curricular_activities
         request_data = {
-            "first_name": "John",
-            "middle_name": "Michael",
-            "last_name": "Doe",
-            "email": "john.doe@email.com",
-            "phone_number": "+1 876 123 4567",
-            "address": "123 Main Street, Kingston, Jamaica",
-            "years_attended": "2015-2020",
+            "first_name": "James",
+            "middle_name": "Anthony",
+            "last_name": "Williams",
+            "email": "james.williams@email.com",
+            "phone_number": "+1 876 555 1234",
+            "address": "456 Hope Road, Kingston 10, Jamaica",
+            "years_attended": [{"from_year": "2015", "to_year": "2020"}, {"from_year": "2021", "to_year": "2022"}],  # NEW ARRAY FORMAT
             "last_form_class": "Upper 6th",
-            "institution_name": "University of the West Indies",
-            "institution_address": "Mona Campus, Kingston 7, Jamaica",
-            "directed_to": "Admissions Committee",
-            "program_name": "Bachelor of Science in Computer Science",
+            "co_curricular_activities": "Head Boy 2021-2022, Captain of Football Team, Member of Debate Club, Science Fair Winner 2020",  # NEW FIELD
+            "institution_name": "Harvard University",
+            "institution_address": "Massachusetts Hall, Cambridge, MA 02138, USA",
+            "directed_to": "Admissions Office",
+            "program_name": "Bachelor of Arts in Economics",
             "needed_by_date": needed_date,
-            "collection_method": "emailed"
+            "collection_method": "delivery",  # NEW COLLECTION METHOD
+            "delivery_address": "789 New Kingston Drive, Kingston 5, Jamaica"  # NEW FIELD
         }
         
         response, error = self.make_request('POST', 'recommendations', request_data, token=self.student_token)
         
         if response and response.status_code == 200:
             data = response.json()
-            if 'id' in data and data['status'] == 'Pending' and data['program_name'] == 'Bachelor of Science in Computer Science':
-                self.log_result("Create recommendation request", True)
+            if ('id' in data and data['status'] == 'Pending' and 
+                data['program_name'] == 'Bachelor of Arts in Economics' and
+                data['collection_method'] == 'delivery' and
+                data['delivery_address'] == '789 New Kingston Drive, Kingston 5, Jamaica' and
+                data['co_curricular_activities'] == 'Head Boy 2021-2022, Captain of Football Team, Member of Debate Club, Science Fair Winner 2020' and
+                isinstance(data['years_attended'], list) and len(data['years_attended']) == 2):
+                self.log_result("Create recommendation request with new fields", True)
                 return data['id']
             else:
-                self.log_result("Create recommendation request", False, "Invalid response format or missing fields")
+                self.log_result("Create recommendation request with new fields", False, "New fields not saved properly")
         else:
             error_detail = ""
             if response:
@@ -688,7 +696,7 @@ class WolmersTranscriptAPITester:
                     error_detail = f" - {response.json()}"
                 except:
                     error_detail = f" - Status: {response.status_code}"
-            self.log_result("Create recommendation request", False, f"Status: {response.status_code if response else 'No response'}{error_detail}")
+            self.log_result("Create recommendation request with new fields", False, f"Status: {response.status_code if response else 'No response'}{error_detail}")
         
         return None
 
