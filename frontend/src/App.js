@@ -119,6 +119,11 @@ function AppRoutes() {
           <RecommendationDetail />
         </ProtectedRoute>
       } />
+      <Route path="/student/recommendation/:id/edit" element={
+        <ProtectedRoute allowedRoles={['student']}>
+          <EditRecommendation />
+        </ProtectedRoute>
+      } />
       <Route path="/student/request/:id/edit" element={
         <ProtectedRoute allowedRoles={['student']}>
           <EditRequest />
