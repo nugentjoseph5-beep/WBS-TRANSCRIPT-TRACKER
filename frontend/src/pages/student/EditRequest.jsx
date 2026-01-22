@@ -294,6 +294,17 @@ export default function EditRequest() {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last_form_class">Last Form Class</Label>
+                <Input
+                  id="last_form_class"
+                  name="last_form_class"
+                  value={formData.last_form_class}
+                  onChange={handleChange}
+                  placeholder="E.g., Upper 6th, Lower 6th, 5th Form (Optional)"
+                />
+              </div>
             </CardContent>
           </Card>
 
