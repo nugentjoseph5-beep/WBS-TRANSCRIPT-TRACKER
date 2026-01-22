@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { requestAPI, userAPI } from '@/lib/api';
+import { requestAPI, userAPI, exportAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { 
   LayoutDashboard, FileText, Users, LogOut, Menu, X,
   Search, Filter, ChevronRight, UserPlus, Loader2, ArrowUpDown,
-  ArrowUp, ArrowDown, AlertTriangle, Calendar, Award
+  ArrowUp, ArrowDown, AlertTriangle, Calendar, Award, Download, FileSpreadsheet, FileType
 } from 'lucide-react';
 
 export default function AdminRequests() {
