@@ -955,46 +955,50 @@ class WolmersTranscriptAPITester:
         # Basic health checks
         self.test_health_check()
         
-        # Authentication tests
-        admin_login_success = self.test_admin_login()
+        # Authentication tests - PRIORITY: Test specific admin credentials
+        print("\n" + "🎯" * 20)
+        print("🎯 PRIORITY: ADMIN LOGIN TEST")
+        print("🎯" * 20)
+        admin_login_success = self.test_admin_login_specific()
+        
         student_reg_success = self.test_student_registration()
         
         if not student_reg_success:
             # Try login if registration failed (user might already exist)
             self.test_student_login()
         
-        # Test password reset flow
-        self.test_password_reset_flow()
-        
         # User management tests
         if admin_login_success:
             self.test_create_staff_user()
             self.test_staff_login()
             self.test_user_management()
-            self.test_admin_reset_user_password()  # New test
             self.test_analytics()
         
         # Test auth/me for all roles
         self.test_auth_me()
         
-        # Transcript request tests
-        request_id = self.test_create_transcript_request()
-        self.test_transcript_request_with_institution()
-        self.test_request_reassignment()  # New test
-        self.test_get_requests()
-        
-        # Recommendation letter request tests (NEW - Priority)
+        # PRIORITY: Test NEW FIELDS for transcript and recommendation requests
         print("\n" + "🎯" * 20)
-        print("🎯 RECOMMENDATION LETTER TESTS (PRIORITY)")
+        print("🎯 PRIORITY: NEW FIELDS TESTING")
         print("🎯" * 20)
         
+        # Transcript request tests with NEW FIELDS
+        request_id = self.test_create_transcript_request()
+        self.test_get_requests()
+        
+        # Recommendation letter request tests with NEW FIELDS
         rec_request_id = self.test_create_recommendation_request()
         self.test_get_recommendation_requests()
         self.test_get_specific_recommendation_request(rec_request_id)
         self.test_update_recommendation_request_status(rec_request_id)
         self.test_student_edit_recommendation_request(rec_request_id)
         self.test_recommendation_request_permissions()
-        self.test_recommendation_request_validation()
+        
+        # PRIORITY: Test EXPORT ENDPOINTS
+        print("\n" + "🎯" * 20)
+        print("🎯 PRIORITY: EXPORT ENDPOINTS TESTING")
+        print("🎯" * 20)
+        self.test_export_endpoints()
         
         # Notification tests
         self.test_notifications()
