@@ -31,6 +31,7 @@ export default function NewRecommendation() {
     email: user?.email || '',
     phone_number: '',
     address: '',
+    enrollment_status: '',
     last_form_class: '',
     co_curricular_activities: '',
     institution_name: '',
