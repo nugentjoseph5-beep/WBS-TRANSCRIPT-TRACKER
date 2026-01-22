@@ -624,6 +624,106 @@ export default function AdminDashboard() {
                 </Card>
               )}
 
+              {/* Charts Row 3 - NEW CHARTS */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* Transcript Status Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg">Transcript Status Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {transcriptStatusData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={transcriptStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {transcriptStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-stone-500">
+                        No data available
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Recommendations by Enrollment Status */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg">Recommendations by Enrollment Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recommendationsEnrollmentData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={recommendationsEnrollmentData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {recommendationsEnrollmentData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-stone-500">
+                        No data available
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 4 - Monthly Trend */}
+              <Card className="mb-8">
+                <CardHeader>
+                  <CardTitle className="font-heading text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-blue-500" />
+                    Monthly Requests Trend (Last 6 Months)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {monthlyTrendData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={monthlyTrendData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="transcripts" fill="#800000" name="Transcript Requests" />
+                        <Bar dataKey="recommendations" fill="#DAA520" name="Recommendation Requests" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-[300px] flex items-center justify-center text-stone-500">
+                      No monthly data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Recent Activity */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Recent Transcript Requests */}
