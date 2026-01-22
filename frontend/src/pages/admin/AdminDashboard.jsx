@@ -210,7 +210,7 @@ export default function AdminDashboard() {
                 className="w-10 h-10 object-contain"
               />
               <div>
-                <h1 className="font-heading text-white font-semibold">Wolmer's</h1>
+                <h1 className="font-heading text-white font-semibold">Wolmer&apos;s</h1>
                 <p className="text-stone-500 text-xs">Admin Portal</p>
               </div>
             </div>
