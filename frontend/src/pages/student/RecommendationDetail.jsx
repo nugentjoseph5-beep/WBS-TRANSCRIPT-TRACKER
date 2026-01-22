@@ -89,7 +89,7 @@ export default function RecommendationDetail() {
               <ArrowLeft className="h-5 w-5" />
               <span>Back to Dashboard</span>
             </Link>
-            {request.status === 'Pending' && (
+            {(request.status === 'Pending' || request.status === 'In Progress') && (
               <Link to={`/student/recommendation/${id}/edit`}>
                 <Button variant="outline" size="sm">
                   <Edit className="h-4 w-4 mr-2" />
