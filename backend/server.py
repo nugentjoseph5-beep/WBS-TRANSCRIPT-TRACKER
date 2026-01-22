@@ -1638,6 +1638,50 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
     total_rec = await db.recommendation_requests.count_documents({})
     pending_rec = await db.recommendation_requests.count_documents({"status": "Pending"})
     completed_rec = await db.recommendation_requests.count_documents({"status": "Completed"})
+    in_progress_rec = await db.recommendation_requests.count_documents({"status": "In Progress"})
+    rejected_rec = await db.recommendation_requests.count_documents({"status": "Rejected"})
+    
+    # Get overdue recommendation requests
+    overdue_rec_count = 0
+    overdue_rec_by_days = []
+    rec_requests = await db.recommendation_requests.find({
+        "status": {"$nin": ["Completed", "Rejected"]},
+        "needed_by_date": {"$ne": None, "$ne": ""}
+    }, {"_id": 0, "needed_by_date": 1}).to_list(10000)
+    
+    for req in rec_requests:
+        try:
+            needed_date = datetime.fromisoformat(req["needed_by_date"].replace('Z', '+00:00')).date()
+            if needed_date < now.date():
+                overdue_rec_count += 1
+                days_overdue = (now.date() - needed_date).days
+                if days_overdue <= 7:
+                    overdue_rec_by_days.append({"days": "1-7 days", "count": 1})
+                elif days_overdue <= 14:
+                    overdue_rec_by_days.append({"days": "8-14 days", "count": 1})
+                elif days_overdue <= 30:
+                    overdue_rec_by_days.append({"days": "15-30 days", "count": 1})
+                else:
+                    overdue_rec_by_days.append({"days": "30+ days", "count": 1})
+        except:
+            pass
+    
+    # Aggregate overdue recommendation by days
+    rec_overdue_agg = {}
+    for item in overdue_rec_by_days:
+        rec_overdue_agg[item["days"]] = rec_overdue_agg.get(item["days"], 0) + 1
+    overdue_rec_by_days_list = [{"days": k, "count": v} for k, v in rec_overdue_agg.items()]
+    
+    # Get recommendation collection method breakdown
+    rec_collection_counts = await db.recommendation_requests.aggregate([
+        {"$group": {"_id": "$collection_method", "count": {"$sum": 1}}}
+    ]).to_list(10)
+    rec_collection_map = {item["_id"]: item["count"] for item in rec_collection_counts if item["_id"]}
+    recommendations_by_collection_method = [
+        {"name": "Pickup at School", "value": rec_collection_map.get("pickup", 0)},
+        {"name": "Emailed to Institution", "value": rec_collection_map.get("emailed", 0)},
+        {"name": "Physical Delivery", "value": rec_collection_map.get("delivery", 0)}
+    ]
     
     return AnalyticsResponse(
         total_requests=total,
@@ -1655,7 +1699,13 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
         overdue_by_days=overdue_by_days_list,
         total_recommendation_requests=total_rec,
         pending_recommendation_requests=pending_rec,
-        completed_recommendation_requests=completed_rec
+        in_progress_recommendation_requests=in_progress_rec,
+        completed_recommendation_requests=completed_rec,
+        rejected_recommendation_requests=rejected_rec,
+        overdue_recommendation_requests=overdue_rec_count,
+        recommendations_by_collection_method=recommendations_by_collection_method,
+        overdue_transcripts_by_days=overdue_by_days_list,
+        overdue_recommendations_by_days=overdue_rec_by_days_list
     )
 
 # ==================== HEALTH CHECK ====================
