@@ -83,12 +83,16 @@ export default function RegisterPage() {
 
         <div className="relative z-10 space-y-6">
           <h2 className="font-heading text-3xl text-white font-bold">
-            Join Our Transcript System
+            Join Our Request System
           </h2>
           <ul className="space-y-3 text-white/80">
             <li className="flex items-center gap-3">
               <span className="w-6 h-6 rounded-full bg-gold-500 text-maroon-900 flex items-center justify-center text-sm font-bold">✓</span>
               Request transcripts online
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="w-6 h-6 rounded-full bg-gold-500 text-maroon-900 flex items-center justify-center text-sm font-bold">✓</span>
+              Request recommendation letters
             </li>
             <li className="flex items-center gap-3">
               <span className="w-6 h-6 rounded-full bg-gold-500 text-maroon-900 flex items-center justify-center text-sm font-bold">✓</span>
