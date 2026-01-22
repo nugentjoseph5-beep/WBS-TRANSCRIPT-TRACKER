@@ -393,63 +393,86 @@ async def check_and_notify_overdue_requests():
 
 def normalize_recommendation_data(request_data: dict) -> dict:
     """Normalize recommendation request data for backward compatibility"""
+    # Make a copy to avoid modifying original
+    data = dict(request_data)
+    
     # Handle years_attended field migration from string to list
-    if "years_attended" in request_data:
-        years_attended = request_data["years_attended"]
-        if isinstance(years_attended, str):
-            # Convert old string format to new list format
-            if years_attended and years_attended != "":
-                # Handle formats like "2015-2020" or "2015-2020, 2021-2022"
-                years_list = []
-                for year_range in years_attended.split(", "):
-                    if "-" in year_range:
-                        from_year, to_year = year_range.split("-", 1)
-                        years_list.append({"from_year": from_year.strip(), "to_year": to_year.strip()})
-                request_data["years_attended"] = years_list
-                request_data["years_attended_str"] = years_attended
-            else:
-                request_data["years_attended"] = []
-                request_data["years_attended_str"] = ""
-        elif isinstance(years_attended, list):
-            # Already in new format, create string version for backward compatibility
-            years_str = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in years_attended])
-            request_data["years_attended_str"] = years_str
+    years_attended = data.get("years_attended", None)
+    if years_attended is None:
+        data["years_attended"] = []
+        data["years_attended_str"] = ""
+    elif isinstance(years_attended, str):
+        # Convert old string format to new list format
+        if years_attended and years_attended.strip() != "":
+            # Handle formats like "2015-2020" or "2015-2020, 2021-2022"
+            years_list = []
+            for year_range in years_attended.split(", "):
+                year_range = year_range.strip()
+                if "-" in year_range:
+                    parts = year_range.split("-", 1)
+                    if len(parts) == 2:
+                        years_list.append({"from_year": parts[0].strip(), "to_year": parts[1].strip()})
+            data["years_attended"] = years_list
+            data["years_attended_str"] = years_attended
+        else:
+            data["years_attended"] = []
+            data["years_attended_str"] = ""
+    elif isinstance(years_attended, list):
+        # Already in new format, create string version for backward compatibility
+        years_str = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in years_attended if isinstance(y, dict)])
+        data["years_attended_str"] = years_str
+    else:
+        data["years_attended"] = []
+        data["years_attended_str"] = ""
     
     # Ensure all required fields have default values
-    if "co_curricular_activities" not in request_data:
-        request_data["co_curricular_activities"] = ""
-    if "delivery_address" not in request_data:
-        request_data["delivery_address"] = ""
+    if "co_curricular_activities" not in data or data.get("co_curricular_activities") is None:
+        data["co_curricular_activities"] = ""
+    if "delivery_address" not in data or data.get("delivery_address") is None:
+        data["delivery_address"] = ""
+    if "years_attended_str" not in data:
+        data["years_attended_str"] = ""
     
-    return request_data
+    return data
 
 def normalize_transcript_data(request_data: dict) -> dict:
     """Normalize transcript request data for backward compatibility"""
+    # Make a copy to avoid modifying original
+    data = dict(request_data)
+    
     # Handle academic_years field migration from string to list
-    if "academic_years" in request_data:
-        academic_years = request_data["academic_years"]
-        if isinstance(academic_years, str) or academic_years is None:
-            # Convert old string format to new list format
-            if "academic_year" in request_data and request_data["academic_year"]:
-                # Use the legacy academic_year field
-                year_range = request_data["academic_year"]
+    academic_years = data.get("academic_years", None)
+    if academic_years is None or (isinstance(academic_years, str)):
+        # Convert old string format to new list format
+        legacy_year = data.get("academic_year", "")
+        if legacy_year and isinstance(legacy_year, str) and legacy_year.strip() != "":
+            # Use the legacy academic_year field
+            years_list = []
+            for year_range in legacy_year.split(", "):
+                year_range = year_range.strip()
                 if "-" in year_range:
-                    from_year, to_year = year_range.split("-", 1)
-                    request_data["academic_years"] = [{"from_year": from_year.strip(), "to_year": to_year.strip()}]
-                else:
-                    request_data["academic_years"] = []
-            else:
-                request_data["academic_years"] = []
-        elif isinstance(academic_years, list):
-            # Already in new format, create string version for backward compatibility
-            years_str = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in academic_years])
-            request_data["academic_year"] = years_str
+                    parts = year_range.split("-", 1)
+                    if len(parts) == 2:
+                        years_list.append({"from_year": parts[0].strip(), "to_year": parts[1].strip()})
+            data["academic_years"] = years_list
+        else:
+            data["academic_years"] = []
+    elif isinstance(academic_years, list):
+        # Already in new format, create string version for backward compatibility
+        years_str = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in academic_years if isinstance(y, dict)])
+        data["academic_year"] = years_str
+    else:
+        data["academic_years"] = []
+    
+    # Ensure academic_year legacy field exists
+    if "academic_year" not in data or data.get("academic_year") is None:
+        data["academic_year"] = ""
     
     # Ensure all required fields have default values
-    if "delivery_address" not in request_data:
-        request_data["delivery_address"] = ""
+    if "delivery_address" not in data or data.get("delivery_address") is None:
+        data["delivery_address"] = ""
     
-    return request_data
+    return data
 
 async def notify_status_change(request_data: dict, old_status: str, new_status: str):
     student = await db.users.find_one({"id": request_data["student_id"]}, {"_id": 0})
