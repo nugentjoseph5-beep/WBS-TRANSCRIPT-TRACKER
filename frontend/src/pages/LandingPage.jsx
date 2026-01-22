@@ -149,7 +149,7 @@ export default function LandingPage() {
                 Secure Collection
               </h4>
               <p className="text-stone-600 leading-relaxed">
-                Choose your preferred collection method: pickup from school or email directly to institution.
+                Choose your preferred collection method: pickup from school, email directly to institution, or physical delivery to your address.
               </p>
             </div>
           </div>
