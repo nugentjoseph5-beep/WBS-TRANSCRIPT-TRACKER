@@ -1,24 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { requestAPI, notificationAPI } from '@/lib/api';
+import { requestAPI, recommendationAPI, notificationAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate, getStatusBadgeClass } from '@/lib/utils';
 import { toast } from 'sonner';
 import { 
   Bell, LogOut, FileText, Clock, CheckCircle, 
-  XCircle, ChevronRight, Menu, X 
+  XCircle, ChevronRight, Menu, X, Search, Filter, Award
 } from 'lucide-react';
 
 export default function StaffDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [requests, setRequests] = useState([]);
+  const [transcriptRequests, setTranscriptRequests] = useState([]);
+  const [recommendationRequests, setRecommendationRequests] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('transcripts');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     fetchData();
@@ -26,11 +33,13 @@ export default function StaffDashboard() {
 
   const fetchData = async () => {
     try {
-      const [requestsRes, unreadRes] = await Promise.all([
+      const [transcriptsRes, recommendationsRes, unreadRes] = await Promise.all([
         requestAPI.getAll(),
+        recommendationAPI.getAll(),
         notificationAPI.getUnreadCount(),
       ]);
-      setRequests(requestsRes.data);
+      setTranscriptRequests(transcriptsRes.data);
+      setRecommendationRequests(recommendationsRes.data);
       setUnreadCount(unreadRes.data.count);
     } catch (error) {
       toast.error('Failed to load data');
@@ -55,12 +64,62 @@ export default function StaffDashboard() {
     }
   };
 
-  const stats = {
-    total: requests.length,
-    pending: requests.filter(r => r.status === 'Pending').length,
-    inProgress: requests.filter(r => ['In Progress', 'Processing'].includes(r.status)).length,
-    ready: requests.filter(r => r.status === 'Ready').length,
-    completed: requests.filter(r => r.status === 'Completed').length,
+  // Filter transcript requests
+  const filteredTranscripts = useMemo(() => {
+    let filtered = [...transcriptRequests];
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(r => 
+        r.student_name.toLowerCase().includes(term) ||
+        r.student_email.toLowerCase().includes(term) ||
+        r.school_id.toLowerCase().includes(term) ||
+        (r.institution_name && r.institution_name.toLowerCase().includes(term))
+      );
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(r => r.status === statusFilter);
+    }
+
+    return filtered;
+  }, [transcriptRequests, searchTerm, statusFilter]);
+
+  // Filter recommendation requests
+  const filteredRecommendations = useMemo(() => {
+    let filtered = [...recommendationRequests];
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(r => 
+        r.student_name.toLowerCase().includes(term) ||
+        r.student_email.toLowerCase().includes(term) ||
+        r.institution_name.toLowerCase().includes(term) ||
+        r.program_name.toLowerCase().includes(term)
+      );
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(r => r.status === statusFilter);
+    }
+
+    return filtered;
+  }, [recommendationRequests, searchTerm, statusFilter]);
+
+  const transcriptStats = {
+    total: transcriptRequests.length,
+    pending: transcriptRequests.filter(r => r.status === 'Pending').length,
+    inProgress: transcriptRequests.filter(r => ['In Progress', 'Processing'].includes(r.status)).length,
+    ready: transcriptRequests.filter(r => r.status === 'Ready').length,
+    completed: transcriptRequests.filter(r => r.status === 'Completed').length,
+  };
+
+  const recommendationStats = {
+    total: recommendationRequests.length,
+    pending: recommendationRequests.filter(r => r.status === 'Pending').length,
+    inProgress: recommendationRequests.filter(r => ['In Progress', 'Processing'].includes(r.status)).length,
+    ready: recommendationRequests.filter(r => r.status === 'Ready').length,
+    completed: recommendationRequests.filter(r => r.status === 'Completed').length,
   };
 
   return (
@@ -77,7 +136,7 @@ export default function StaffDashboard() {
                 className="w-10 h-10 object-contain"
               />
               <div className="hidden sm:block">
-                <h1 className="font-heading text-stone-900 font-semibold">Wolmer's</h1>
+                <h1 className="font-heading text-stone-900 font-semibold">WBS</h1>
                 <p className="text-stone-500 text-xs">Staff Portal</p>
               </div>
             </Link>
@@ -107,13 +166,14 @@ export default function StaffDashboard() {
                 variant="ghost"
                 size="sm"
                 onClick={handleLogout}
-                className="hidden md:flex text-stone-600 hover:text-gold-600"
+                className="hidden md:flex text-stone-600 hover:text-gold-500"
                 data-testid="staff-logout-btn"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
 
+              {/* Mobile menu button */}
               <button
                 className="md:hidden p-2"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -134,6 +194,16 @@ export default function StaffDashboard() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 My Assignments
+              </Link>
+              <Link 
+                to="/staff/notifications" 
+                className="flex items-center justify-between px-3 py-2 rounded-md text-stone-600 hover:bg-stone-50"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span>Notifications</span>
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="bg-red-500">{unreadCount}</Badge>
+                )}
               </Link>
               <hr className="my-2" />
               <div className="px-3 py-2">
@@ -158,102 +228,269 @@ export default function StaffDashboard() {
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-stone-900 mb-2">
             Welcome, {user?.full_name?.split(' ')[0]}!
           </h2>
-          <p className="text-stone-600">Manage your assigned transcript requests</p>
+          <p className="text-stone-600">Manage your assigned transcript and recommendation requests</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-stone-500">Assigned</p>
-                <p className="text-2xl font-bold text-stone-900">{stats.total}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-stone-500">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-stone-500">In Progress</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-stone-500">Ready</p>
-                <p className="text-2xl font-bold text-cyan-600">{stats.ready}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white col-span-2 md:col-span-1">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <p className="text-sm text-stone-500">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="transcripts" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Transcripts ({transcriptRequests.length})
+            </TabsTrigger>
+            <TabsTrigger value="recommendations" className="flex items-center gap-2">
+              <Award className="h-4 w-4" />
+              Recommendations ({recommendationRequests.length})
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Requests List */}
-        <Card className="bg-white">
-          <CardHeader className="border-b border-stone-100">
-            <CardTitle className="font-heading text-xl">My Assigned Requests</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mx-auto"></div>
-                <p className="text-stone-500 mt-4">Loading requests...</p>
+          {/* Transcript Requests Tab */}
+          <TabsContent value="transcripts" className="space-y-6">
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">Total</p>
+                  <p className="text-2xl font-bold text-stone-900">{transcriptStats.total}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">Pending</p>
+                  <p className="text-2xl font-bold text-yellow-600">{transcriptStats.pending}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">In Progress</p>
+                  <p className="text-2xl font-bold text-blue-600">{transcriptStats.inProgress}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">Ready</p>
+                  <p className="text-2xl font-bold text-cyan-600">{transcriptStats.ready}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">Completed</p>
+                  <p className="text-2xl font-bold text-green-600">{transcriptStats.completed}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                <Input
+                  placeholder="Search by student, school ID, institution..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            ) : requests.length === 0 ? (
-              <div className="p-8 text-center">
-                <FileText className="h-12 w-12 text-stone-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-stone-900 mb-2">No assignments yet</h3>
-                <p className="text-stone-500">You'll see requests here when they're assigned to you</p>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Processing">Processing</SelectItem>
+                  <SelectItem value="Ready">Ready</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Requests List */}
+            <Card className="bg-white">
+              <CardHeader className="border-b border-stone-100">
+                <CardTitle className="font-heading text-xl">
+                  Assigned Transcript Requests
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loading ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maroon-500 mx-auto"></div>
+                  </div>
+                ) : transcriptRequests.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <FileText className="h-12 w-12 text-stone-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-stone-900 mb-2">No assigned requests</h3>
+                    <p className="text-stone-500">Transcript requests assigned to you will appear here</p>
+                  </div>
+                ) : filteredTranscripts.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Search className="h-12 w-12 text-stone-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-stone-900 mb-2">No matching requests</h3>
+                    <Button variant="outline" onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}>
+                      Clear filters
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-stone-100">
+                    {filteredTranscripts.map((request) => (
+                      <Link
+                        key={request.id}
+                        to={`/staff/request/${request.id}`}
+                        className="flex items-center justify-between p-4 hover:bg-stone-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          {getStatusIcon(request.status)}
+                          <div>
+                            <p className="font-medium text-stone-900">
+                              {request.student_name} - {request.academic_year}
+                            </p>
+                            <p className="text-sm text-stone-500">
+                              Needed by {formatDate(request.needed_by_date)}
+                              {request.institution_name && ` • ${request.institution_name}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={getStatusBadgeClass(request.status)}>
+                            {request.status}
+                          </span>
+                          <ChevronRight className="h-5 w-5 text-stone-400" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Recommendation Requests Tab */}
+          <TabsContent value="recommendations" className="space-y-6">
+            {/* Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">Total</p>
+                  <p className="text-2xl font-bold text-stone-900">{recommendationStats.total}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">Pending</p>
+                  <p className="text-2xl font-bold text-yellow-600">{recommendationStats.pending}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">In Progress</p>
+                  <p className="text-2xl font-bold text-blue-600">{recommendationStats.inProgress}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">Ready</p>
+                  <p className="text-2xl font-bold text-cyan-600">{recommendationStats.ready}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white">
+                <CardContent className="p-4">
+                  <p className="text-sm text-stone-500">Completed</p>
+                  <p className="text-2xl font-bold text-green-600">{recommendationStats.completed}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                <Input
+                  placeholder="Search by student, institution, program..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            ) : (
-              <div className="divide-y divide-stone-100">
-                {requests.map((request) => (
-                  <Link
-                    key={request.id}
-                    to={`/staff/request/${request.id}`}
-                    className="flex items-center justify-between p-4 hover:bg-stone-50 transition-colors"
-                    data-testid={`staff-request-item-${request.id}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      {getStatusIcon(request.status)}
-                      <div>
-                        <p className="font-medium text-stone-900">
-                          {request.first_name} {request.last_name}
-                        </p>
-                        <p className="text-sm text-stone-500">
-                          {request.school_id} • {request.academic_year} • Needed by {formatDate(request.needed_by_date)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={getStatusBadgeClass(request.status)}>
-                        {request.status}
-                      </span>
-                      <ChevronRight className="h-5 w-5 text-stone-400" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full md:w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Processing">Processing</SelectItem>
+                  <SelectItem value="Ready">Ready</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Requests List */}
+            <Card className="bg-white">
+              <CardHeader className="border-b border-stone-100">
+                <CardTitle className="font-heading text-xl">
+                  Assigned Recommendation Requests
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loading ? (
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gold-500 mx-auto"></div>
+                  </div>
+                ) : recommendationRequests.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Award className="h-12 w-12 text-stone-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-stone-900 mb-2">No assigned requests</h3>
+                    <p className="text-stone-500">Recommendation requests assigned to you will appear here</p>
+                  </div>
+                ) : filteredRecommendations.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Search className="h-12 w-12 text-stone-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-stone-900 mb-2">No matching requests</h3>
+                    <Button variant="outline" onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}>
+                      Clear filters
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-stone-100">
+                    {filteredRecommendations.map((request) => (
+                      <Link
+                        key={request.id}
+                        to={`/staff/recommendation/${request.id}`}
+                        className="flex items-center justify-between p-4 hover:bg-stone-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          {getStatusIcon(request.status)}
+                          <div>
+                            <p className="font-medium text-stone-900">
+                              {request.student_name} - {request.institution_name}
+                            </p>
+                            <p className="text-sm text-stone-500">
+                              Needed by {formatDate(request.needed_by_date)} • {request.program_name}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={getStatusBadgeClass(request.status)}>
+                            {request.status}
+                          </span>
+                          <ChevronRight className="h-5 w-5 text-stone-400" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
