@@ -511,6 +511,12 @@ def normalize_transcript_data(request_data: dict) -> dict:
     # Ensure all required fields have default values
     if "delivery_address" not in data or data.get("delivery_address") is None:
         data["delivery_address"] = ""
+    if "other_reason" not in data or data.get("other_reason") is None:
+        data["other_reason"] = ""
+    if "school_id" not in data or data.get("school_id") is None:
+        data["school_id"] = ""
+    if "wolmers_email" not in data or data.get("wolmers_email") is None:
+        data["wolmers_email"] = ""
     
     return data
 
