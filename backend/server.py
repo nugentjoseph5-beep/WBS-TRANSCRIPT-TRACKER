@@ -1227,6 +1227,8 @@ async def create_recommendation_request(request_data: RecommendationRequestCreat
         "years_attended_str": years_attended_str,  # Legacy field
         "last_form_class": request_data.last_form_class,
         "co_curricular_activities": request_data.co_curricular_activities or "",
+        "reason": request_data.reason,
+        "other_reason": request_data.other_reason or "",
         "institution_name": request_data.institution_name,
         "institution_address": request_data.institution_address,
         "directed_to": request_data.directed_to or "",
