@@ -122,6 +122,67 @@ export default function AdminDashboard() {
     }
   };
 
+  // Fetch data summary for data management
+  const fetchDataSummary = async () => {
+    try {
+      const res = await dataManagementAPI.getSummary();
+      setDataSummary(res.data);
+    } catch (error) {
+      console.error('Failed to fetch data summary:', error);
+    }
+  };
+
+  // Export all data to PDF
+  const handleExportAllData = async () => {
+    setExportLoading(true);
+    try {
+      const response = await dataManagementAPI.exportAllData();
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `wbs_complete_data_export_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Complete data exported to PDF');
+    } catch (error) {
+      toast.error('Failed to export data');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  // Open clear data modal
+  const openClearModal = async () => {
+    await fetchDataSummary();
+    setShowClearModal(true);
+    setConfirmText('');
+  };
+
+  // Clear all data
+  const handleClearAllData = async () => {
+    if (confirmText !== 'DELETE ALL DATA') {
+      toast.error('Please type "DELETE ALL DATA" to confirm');
+      return;
+    }
+    
+    setClearingData(true);
+    try {
+      const response = await dataManagementAPI.clearAllData();
+      toast.success(response.data.message);
+      setShowClearModal(false);
+      setConfirmText('');
+      // Refresh dashboard data
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to clear data');
+    } finally {
+      setClearingData(false);
+    }
+  };
+
   // Navigate to requests with filter
   const handleTileClick = (filter, type = 'transcripts') => {
     if (type === 'transcripts') {
