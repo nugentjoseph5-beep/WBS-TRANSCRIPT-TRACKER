@@ -468,6 +468,10 @@ def normalize_recommendation_data(request_data: dict) -> dict:
         data["delivery_address"] = ""
     if "years_attended_str" not in data:
         data["years_attended_str"] = ""
+    if "reason" not in data or data.get("reason") is None:
+        data["reason"] = ""
+    if "other_reason" not in data or data.get("other_reason") is None:
+        data["other_reason"] = ""
     
     return data
 
