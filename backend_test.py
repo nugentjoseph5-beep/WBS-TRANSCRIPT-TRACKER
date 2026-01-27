@@ -1144,6 +1144,7 @@ class WolmersTranscriptAPITester:
             "phone_number": "+1 876 555 0000",
             "address": "Bug Test Address, Kingston, Jamaica",
             "years_attended": [{"from_year": "2018", "to_year": "2023"}],
+            "enrollment_status": "graduate",  # REQUIRED FIELD
             "last_form_class": "Upper 6th",
             "co_curricular_activities": "Student Council President",
             "institution_name": "Bug Test University",
