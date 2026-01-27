@@ -30,6 +30,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [dataSummary, setDataSummary] = useState(null);
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [clearingData, setClearingData] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
 
   useEffect(() => {
     fetchData();
