@@ -1010,6 +1010,7 @@ class WolmersTranscriptAPITester:
             "phone_number": "+1 876 555 9999",
             "address": "123 Test Street, Kingston, Jamaica",
             "years_attended": [{"from_year": "2015", "to_year": "2020"}, {"from_year": "2021", "to_year": "2022"}],
+            "enrollment_status": "graduate",  # REQUIRED FIELD
             "last_form_class": "Upper 6th",
             "co_curricular_activities": "Head Boy, Football Captain",
             "institution_name": "Test University",
