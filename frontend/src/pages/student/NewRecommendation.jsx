@@ -34,6 +34,8 @@ export default function NewRecommendation() {
     enrollment_status: '',
     last_form_class: '',
     co_curricular_activities: '',
+    reason: '',
+    other_reason: '',
     institution_name: '',
     institution_address: '',
     directed_to: '',
