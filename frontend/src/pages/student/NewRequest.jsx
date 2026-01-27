@@ -208,14 +208,13 @@ export default function NewRequest() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="school_id">School ID Number *</Label>
+                  <Label htmlFor="school_id">School ID Number</Label>
                   <Input
                     id="school_id"
                     name="school_id"
                     value={formData.school_id}
                     onChange={handleChange}
-                    required
-                    placeholder="e.g., WBS2024001"
+                    placeholder="e.g., WBS2024001 (Optional)"
                     data-testid="school-id-input"
                   />
                 </div>
