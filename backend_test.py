@@ -1726,6 +1726,159 @@ class WolmersTranscriptAPITester:
         # Test 4: Timeline Display Format
         self.test_timeline_display_format()
 
+    def test_form_field_updates_transcript(self):
+        """Test form field updates for transcript requests - REVIEW REQUEST FOCUS"""
+        print("\n🔍 Testing Form Field Updates for Transcript Requests...")
+        
+        if not self.student_token:
+            self.log_result("Form Field Updates - Transcript", False, "No student token available")
+            return
+        
+        needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        # Test 1: Transcript Request without school_id and wolmers_email (now OPTIONAL)
+        print("   Testing transcript request without school_id and wolmers_email...")
+        request_data_1 = {
+            "first_name": "John",
+            "middle_name": "Optional",
+            "last_name": "Fields",
+            # school_id: OMITTED (should be optional now)
+            "enrollment_status": "graduate",
+            "academic_years": [{"from_year": "2018", "to_year": "2023"}],
+            # wolmers_email: OMITTED (should be optional now)
+            "personal_email": self.test_student_email,
+            "phone_number": "+1 876 555 1111",
+            "reason": "University application",
+            "needed_by_date": needed_date,
+            "collection_method": "pickup"
+        }
+        
+        response, error = self.make_request('POST', 'requests', request_data_1, token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if 'id' in data and data['status'] == 'Pending':
+                # Check that empty fields are handled properly
+                if data.get('school_id', '') == '' and data.get('wolmers_email', '') == '':
+                    self.log_result("Transcript Request - Optional school_id and wolmers_email", True)
+                else:
+                    self.log_result("Transcript Request - Optional school_id and wolmers_email", False, f"Fields not handled as optional: school_id='{data.get('school_id')}', wolmers_email='{data.get('wolmers_email')}'")
+            else:
+                self.log_result("Transcript Request - Optional school_id and wolmers_email", False, "Request not created successfully")
+        else:
+            self.log_result("Transcript Request - Optional school_id and wolmers_email", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 2: Transcript Request with reason "Other" and other_reason
+        print("   Testing transcript request with reason 'Other' and other_reason...")
+        request_data_2 = {
+            "first_name": "Jane",
+            "middle_name": "Other",
+            "last_name": "Reason",
+            "school_id": "WBS2024001",
+            "enrollment_status": "graduate",
+            "academic_years": [{"from_year": "2019", "to_year": "2024"}],
+            "wolmers_email": "jane.other@wolmers.org",
+            "personal_email": self.test_student_email,
+            "phone_number": "+1 876 555 2222",
+            "reason": "Other",
+            "other_reason": "Testing custom reason for transcript request",
+            "needed_by_date": needed_date,
+            "collection_method": "pickup"
+        }
+        
+        response, error = self.make_request('POST', 'requests', request_data_2, token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if ('id' in data and data['status'] == 'Pending' and 
+                data.get('reason') == 'Other' and 
+                data.get('other_reason') == 'Testing custom reason for transcript request'):
+                self.log_result("Transcript Request - Other reason with other_reason", True)
+            else:
+                self.log_result("Transcript Request - Other reason with other_reason", False, f"Reason fields not saved properly: reason='{data.get('reason')}', other_reason='{data.get('other_reason')}'")
+        else:
+            self.log_result("Transcript Request - Other reason with other_reason", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_form_field_updates_recommendation(self):
+        """Test form field updates for recommendation requests - REVIEW REQUEST FOCUS"""
+        print("\n🔍 Testing Form Field Updates for Recommendation Requests...")
+        
+        if not self.student_token:
+            self.log_result("Form Field Updates - Recommendation", False, "No student token available")
+            return
+        
+        needed_date = (datetime.now() + timedelta(days=45)).strftime('%Y-%m-%d')
+        
+        # Test 3: Recommendation Request with reason (new required field)
+        print("   Testing recommendation request with reason field...")
+        request_data_3 = {
+            "first_name": "Michael",
+            "middle_name": "New",
+            "last_name": "Reason",
+            "email": "michael.reason@email.com",
+            "phone_number": "+1 876 555 3333",
+            "address": "123 Reason Street, Kingston, Jamaica",
+            "years_attended": [{"from_year": "2017", "to_year": "2022"}],
+            "enrollment_status": "graduate",
+            "last_form_class": "Upper 6th",
+            "co_curricular_activities": "Student Council Member",
+            "reason": "University application",  # NEW REQUIRED FIELD
+            "institution_name": "Test University",
+            "institution_address": "Test University Address",
+            "directed_to": "Admissions Office",
+            "program_name": "Computer Science",
+            "needed_by_date": needed_date,
+            "collection_method": "pickup"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', request_data_3, token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if ('id' in data and data['status'] == 'Pending' and 
+                data.get('reason') == 'University application'):
+                self.log_result("Recommendation Request - New reason field", True)
+            else:
+                self.log_result("Recommendation Request - New reason field", False, f"Reason field not saved properly: reason='{data.get('reason')}'")
+        else:
+            self.log_result("Recommendation Request - New reason field", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 4: Recommendation Request with reason "Other" and other_reason
+        print("   Testing recommendation request with reason 'Other' and other_reason...")
+        request_data_4 = {
+            "first_name": "Sarah",
+            "middle_name": "Special",
+            "last_name": "Application",
+            "email": "sarah.special@email.com",
+            "phone_number": "+1 876 555 4444",
+            "address": "456 Special Street, Kingston, Jamaica",
+            "years_attended": [{"from_year": "2016", "to_year": "2021"}],
+            "enrollment_status": "graduate",
+            "last_form_class": "Upper 6th",
+            "co_curricular_activities": "Drama Club President",
+            "reason": "Other",  # NEW REQUIRED FIELD
+            "other_reason": "Special application for scholarship program",  # REQUIRED when reason is "Other"
+            "institution_name": "Special University",
+            "institution_address": "Special University Address",
+            "directed_to": "Scholarship Committee",
+            "program_name": "Engineering",
+            "needed_by_date": needed_date,
+            "collection_method": "emailed"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', request_data_4, token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if ('id' in data and data['status'] == 'Pending' and 
+                data.get('reason') == 'Other' and 
+                data.get('other_reason') == 'Special application for scholarship program'):
+                self.log_result("Recommendation Request - Other reason with other_reason", True)
+            else:
+                self.log_result("Recommendation Request - Other reason with other_reason", False, f"Reason fields not saved properly: reason='{data.get('reason')}', other_reason='{data.get('other_reason')}'")
+        else:
+            self.log_result("Recommendation Request - Other reason with other_reason", False, f"Status: {response.status_code if response else 'No response'}")
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting Wolmer's Transcript Tracker API Tests")
