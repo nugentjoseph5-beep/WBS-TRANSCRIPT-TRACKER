@@ -226,6 +226,8 @@ class RecommendationRequestCreate(BaseModel):
     enrollment_status: str  # Enrolled, Graduate, Withdrawn
     last_form_class: str  # e.g., "6th Form" or "Upper 6"
     co_curricular_activities: Optional[str] = ""  # Positions of responsibility and activities
+    reason: str  # Reason for requesting recommendation
+    other_reason: Optional[str] = ""  # Required if reason is 'Other'
     institution_name: str
     institution_address: str
     directed_to: Optional[str] = ""  # Whom should the letter be directed to
