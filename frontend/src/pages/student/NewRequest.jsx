@@ -305,15 +305,14 @@ export default function NewRequest() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="wolmers_email">Wolmer's Email *</Label>
+                <Label htmlFor="wolmers_email">Wolmer's Email</Label>
                 <Input
                   id="wolmers_email"
                   name="wolmers_email"
                   type="email"
                   value={formData.wolmers_email}
                   onChange={handleChange}
-                  required
-                  placeholder="firstname.lastname.year@wolmers.org"
+                  placeholder="firstname.lastname.year@wolmers.org (Optional)"
                   data-testid="wolmers-email-input"
                 />
                 <p className="text-xs text-stone-500">Format: firstname.lastname.year@wolmers.org</p>
