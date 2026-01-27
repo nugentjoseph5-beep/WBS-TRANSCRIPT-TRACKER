@@ -2197,6 +2197,218 @@ def generate_recommendation_docx(requests):
         headers={"Content-Disposition": f"attachment; filename=recommendation_requests_{datetime.now().strftime('%Y%m%d')}.docx"}
     )
 
+# ==================== ADMIN DATA MANAGEMENT ====================
+
+class DataClearResponse(BaseModel):
+    success: bool
+    message: str
+    deleted_counts: dict
+
+@api_router.get("/admin/export-all-data/pdf")
+async def export_all_data_pdf(current_user: dict = Depends(get_current_user)):
+    """Export all data (users, transcripts, recommendations) to PDF before clearing"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Fetch all data
+    users = await db.users.find({"role": {"$ne": "admin"}}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    transcripts = await db.transcript_requests.find({}, {"_id": 0}).to_list(1000)
+    recommendations = await db.recommendation_requests.find({}, {"_id": 0}).to_list(1000)
+    notifications = await db.notifications.find({}, {"_id": 0}).to_list(1000)
+    
+    # Generate PDF
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter), topMargin=0.5*inch, bottomMargin=0.5*inch)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#800000'),
+        spaceAfter=20,
+        alignment=1
+    )
+    elements.append(Paragraph("WBS Transcript and Recommendation Tracker - Complete Data Export", title_style))
+    elements.append(Paragraph(f"Export Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Spacer(1, 20))
+    
+    # Summary
+    summary_data = [
+        ["Category", "Count"],
+        ["Users (non-admin)", str(len(users))],
+        ["Transcript Requests", str(len(transcripts))],
+        ["Recommendation Requests", str(len(recommendations))],
+        ["Notifications", str(len(notifications))],
+    ]
+    summary_table = Table(summary_data, colWidths=[3*inch, 1.5*inch])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#800000')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    elements.append(Paragraph("Data Summary", styles['Heading2']))
+    elements.append(summary_table)
+    elements.append(Spacer(1, 30))
+    
+    # Users Section
+    if users:
+        elements.append(Paragraph("Users (Non-Admin)", styles['Heading2']))
+        user_data = [["Name", "Email", "Role", "Created At"]]
+        for user in users:
+            user_data.append([
+                user.get("full_name", ""),
+                user.get("email", ""),
+                user.get("role", ""),
+                str(user.get("created_at", ""))[:19]
+            ])
+        user_table = Table(user_data, colWidths=[2.5*inch, 3*inch, 1*inch, 2*inch])
+        user_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#800000')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        elements.append(user_table)
+        elements.append(Spacer(1, 20))
+    
+    # Transcript Requests Section
+    if transcripts:
+        elements.append(Paragraph("Transcript Requests", styles['Heading2']))
+        transcript_data = [["Student", "Status", "Academic Years", "Collection", "Created At"]]
+        for req in transcripts:
+            academic_years = req.get("academic_years", req.get("academic_year", ""))
+            if isinstance(academic_years, list):
+                academic_years = ", ".join([f"{y.get('from_year', '')}-{y.get('to_year', '')}" for y in academic_years])
+            transcript_data.append([
+                req.get("student_name", ""),
+                req.get("status", ""),
+                str(academic_years)[:30],
+                req.get("collection_method", ""),
+                str(req.get("created_at", ""))[:10]
+            ])
+        transcript_table = Table(transcript_data, colWidths=[2*inch, 1.2*inch, 2*inch, 1.3*inch, 1.5*inch])
+        transcript_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#800000')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        elements.append(transcript_table)
+        elements.append(Spacer(1, 20))
+    
+    # Recommendation Requests Section
+    if recommendations:
+        elements.append(Paragraph("Recommendation Requests", styles['Heading2']))
+        rec_data = [["Student", "Institution", "Program", "Status", "Created At"]]
+        for req in recommendations:
+            rec_data.append([
+                req.get("student_name", ""),
+                str(req.get("institution_name", ""))[:25],
+                str(req.get("program_name", ""))[:20],
+                req.get("status", ""),
+                str(req.get("created_at", ""))[:10]
+            ])
+        rec_table = Table(rec_data, colWidths=[2*inch, 2.5*inch, 1.8*inch, 1.2*inch, 1.2*inch])
+        rec_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#800000')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        elements.append(rec_table)
+        elements.append(Spacer(1, 20))
+    
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=wbs_complete_data_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"}
+    )
+
+@api_router.delete("/admin/clear-all-data")
+async def clear_all_data(current_user: dict = Depends(get_current_user)):
+    """Clear all data from the database except the admin account"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Delete all users except admin
+        users_result = await db.users.delete_many({"email": {"$ne": "admin@wolmers.org"}})
+        
+        # Delete all transcript requests
+        transcripts_result = await db.transcript_requests.delete_many({})
+        
+        # Delete all recommendation requests
+        recommendations_result = await db.recommendation_requests.delete_many({})
+        
+        # Delete all notifications
+        notifications_result = await db.notifications.delete_many({})
+        
+        # Delete all password reset tokens
+        password_resets_result = await db.password_resets.delete_many({})
+        
+        deleted_counts = {
+            "users": users_result.deleted_count,
+            "transcript_requests": transcripts_result.deleted_count,
+            "recommendation_requests": recommendations_result.deleted_count,
+            "notifications": notifications_result.deleted_count,
+            "password_resets": password_resets_result.deleted_count
+        }
+        
+        total_deleted = sum(deleted_counts.values())
+        
+        logger.info(f"Admin {current_user['email']} cleared all data: {deleted_counts}")
+        
+        return DataClearResponse(
+            success=True,
+            message=f"Successfully cleared {total_deleted} records from the database",
+            deleted_counts=deleted_counts
+        )
+    except Exception as e:
+        logger.error(f"Error clearing data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to clear data: {str(e)}")
+
+@api_router.get("/admin/data-summary")
+async def get_data_summary(current_user: dict = Depends(get_current_user)):
+    """Get summary of all data in the database"""
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    users_count = await db.users.count_documents({"email": {"$ne": "admin@wolmers.org"}})
+    transcripts_count = await db.transcript_requests.count_documents({})
+    recommendations_count = await db.recommendation_requests.count_documents({})
+    notifications_count = await db.notifications.count_documents({})
+    
+    return {
+        "users": users_count,
+        "transcript_requests": transcripts_count,
+        "recommendation_requests": recommendations_count,
+        "notifications": notifications_count,
+        "total": users_count + transcripts_count + recommendations_count + notifications_count
+    }
+
 # ==================== SEED DEFAULT ADMIN ====================
 
 @app.on_event("startup")
