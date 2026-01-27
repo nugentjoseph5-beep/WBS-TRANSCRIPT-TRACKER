@@ -529,6 +529,39 @@ backend:
         
         The recommendation workflow is fully functional without any critical bugs. All endpoints work correctly end-to-end."
 
+  - task: "Admin Data Management APIs (Clear All Data, Export All Data, Data Summary)"
+    implemented: true
+    working: NA
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: NA
+        agent: "main"
+        comment: "Newly implemented admin data management feature:
+        
+        ENDPOINTS IMPLEMENTED:
+        • GET /api/admin/data-summary - Get count of all records (users, transcripts, recommendations, notifications)
+        • GET /api/admin/export-all-data/pdf - Export all data to PDF before clearing
+        • DELETE /api/admin/clear-all-data - Clear all data except admin account
+        
+        BACKEND FEATURES:
+        • Admin-only access control (403 for non-admin users)
+        • PDF export includes all users (non-admin), transcripts, recommendations with formatted tables
+        • Clear data preserves admin@wolmers.org account
+        • Returns detailed deleted counts summary
+        
+        FRONTEND FEATURES:
+        • Data Management section added to Admin Dashboard
+        • Export All Data (PDF) button
+        • Clear All Data button with confirmation modal
+        • Confirmation requires typing 'DELETE ALL DATA' to proceed
+        • Shows data summary before clearing
+        • Option to export data before clearing in modal
+        
+        Needs testing to verify all functionality."
+
 frontend:
   - task: "Landing page with updated branding"
     implemented: true
