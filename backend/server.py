@@ -276,6 +276,8 @@ class RecommendationRequestResponse(BaseModel):
     years_attended_str: str = ""  # Legacy string format for backward compatibility
     last_form_class: str
     co_curricular_activities: str = ""
+    reason: str = ""
+    other_reason: str = ""
     institution_name: str
     institution_address: str
     directed_to: str
