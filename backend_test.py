@@ -1209,6 +1209,113 @@ class WolmersTranscriptAPITester:
         # Final verification: Check that the workflow completed without errors
         self.log_result("Recommendation Workflow - Complete End-to-End", True)
 
+    def test_admin_data_management(self):
+        """Test Admin Data Management APIs - NEW FEATURE"""
+        print("\n🔍 Testing Admin Data Management APIs...")
+        
+        if not self.admin_token:
+            self.log_result("Admin Data Management", False, "No admin token available")
+            return
+        
+        # Test 1: GET /api/admin/data-summary
+        print("Testing data summary endpoint...")
+        response, error = self.make_request('GET', 'admin/data-summary', token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            required_fields = ['users', 'transcript_requests', 'recommendation_requests', 'notifications', 'total']
+            if all(field in data for field in required_fields):
+                self.log_result("Admin Data Summary - GET /api/admin/data-summary", True)
+                print(f"   Data counts: Users={data['users']}, Transcripts={data['transcript_requests']}, Recommendations={data['recommendation_requests']}, Notifications={data['notifications']}")
+            else:
+                missing_fields = [field for field in required_fields if field not in data]
+                self.log_result("Admin Data Summary - GET /api/admin/data-summary", False, f"Missing fields: {missing_fields}")
+        else:
+            self.log_result("Admin Data Summary - GET /api/admin/data-summary", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 2: GET /api/admin/export-all-data/pdf
+        print("Testing PDF export endpoint...")
+        response, error = self.make_request('GET', 'admin/export-all-data/pdf', token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            content_type = response.headers.get('content-type', '').lower()
+            if 'application/pdf' in content_type:
+                self.log_result("Admin Export All Data PDF - GET /api/admin/export-all-data/pdf", True)
+                print(f"   PDF export successful, content-type: {content_type}")
+            else:
+                self.log_result("Admin Export All Data PDF - GET /api/admin/export-all-data/pdf", False, f"Wrong content type: {content_type}")
+        else:
+            self.log_result("Admin Export All Data PDF - GET /api/admin/export-all-data/pdf", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        # Test 3: DELETE /api/admin/clear-all-data (WARNING: This will clear data!)
+        print("Testing clear all data endpoint...")
+        response, error = self.make_request('DELETE', 'admin/clear-all-data', token=self.admin_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if ('success' in data and data['success'] == True and 
+                'message' in data and 'deleted_counts' in data):
+                self.log_result("Admin Clear All Data - DELETE /api/admin/clear-all-data", True)
+                print(f"   Clear data successful: {data['message']}")
+                print(f"   Deleted counts: {data['deleted_counts']}")
+                
+                # Verify admin account is preserved by trying to login again
+                login_response, _ = self.make_request('POST', 'auth/login', {
+                    "email": "admin@wolmers.org",
+                    "password": "Admin123!"
+                })
+                
+                if login_response and login_response.status_code == 200:
+                    self.log_result("Admin Account Preserved After Clear", True)
+                    self.admin_token = login_response.json()['access_token']  # Update token
+                else:
+                    self.log_result("Admin Account Preserved After Clear", False, "Admin login failed after clear")
+            else:
+                self.log_result("Admin Clear All Data - DELETE /api/admin/clear-all-data", False, "Invalid response format")
+        else:
+            self.log_result("Admin Clear All Data - DELETE /api/admin/clear-all-data", False, f"Status: {response.status_code if response else 'No response'}")
+
+    def test_admin_data_management_permissions(self):
+        """Test Admin Data Management permission restrictions"""
+        print("\n🔍 Testing Admin Data Management Permissions...")
+        
+        # Create a test student to verify non-admin access is denied
+        test_student_email = f"test_perm_{datetime.now().strftime('%H%M%S')}@example.com"
+        
+        # Register student
+        response, error = self.make_request('POST', 'auth/register', {
+            "full_name": "Test Permission Student",
+            "email": test_student_email,
+            "password": "TestPass123!",
+            "role": "student"
+        })
+        
+        if response and response.status_code == 200:
+            student_token = response.json()['access_token']
+            
+            # Test 1: Student cannot access data summary
+            response, error = self.make_request('GET', 'admin/data-summary', token=student_token)
+            if response and response.status_code == 403:
+                self.log_result("Non-admin denied data summary access", True)
+            else:
+                self.log_result("Non-admin denied data summary access", False, f"Expected 403, got {response.status_code if response else 'No response'}")
+            
+            # Test 2: Student cannot access PDF export
+            response, error = self.make_request('GET', 'admin/export-all-data/pdf', token=student_token)
+            if response and response.status_code == 403:
+                self.log_result("Non-admin denied PDF export access", True)
+            else:
+                self.log_result("Non-admin denied PDF export access", False, f"Expected 403, got {response.status_code if response else 'No response'}")
+            
+            # Test 3: Student cannot clear data
+            response, error = self.make_request('DELETE', 'admin/clear-all-data', token=student_token)
+            if response and response.status_code == 403:
+                self.log_result("Non-admin denied clear data access", True)
+            else:
+                self.log_result("Non-admin denied clear data access", False, f"Expected 403, got {response.status_code if response else 'No response'}")
+        else:
+            self.log_result("Admin Data Management Permissions", False, "Could not create test student for permission testing")
+
     def test_transcript_status_notes(self):
         """Test 1: Transcript Status Notes - Custom notes in timeline"""
         print("\n🔍 Testing Transcript Status Notes...")
