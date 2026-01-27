@@ -1459,6 +1459,7 @@ class WolmersTranscriptAPITester:
             "phone_number": "+1 876 555 2222",
             "address": "123 Status Notes Street, Kingston, Jamaica",
             "years_attended": [{"from_year": "2017", "to_year": "2022"}],
+            "enrollment_status": "graduate",  # REQUIRED FIELD
             "last_form_class": "Upper 6th",
             "co_curricular_activities": "Debate Team Captain, Science Club President",
             "institution_name": "Status Notes University",
