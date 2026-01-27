@@ -452,6 +452,43 @@ export default function NewRecommendation() {
               <CardDescription>When do you need the letter and how should we deliver it?</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reason">Reason for Request *</Label>
+                <Select 
+                  value={formData.reason} 
+                  onValueChange={(value) => handleSelectChange('reason', value)}
+                >
+                  <SelectTrigger data-testid="reason-select">
+                    <SelectValue placeholder="Select reason" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="University application">University Application</SelectItem>
+                    <SelectItem value="Employment">Employment</SelectItem>
+                    <SelectItem value="Scholarship application">Scholarship Application</SelectItem>
+                    <SelectItem value="Graduate school">Graduate School Application</SelectItem>
+                    <SelectItem value="Professional certification">Professional Certification</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Other Reason - Show when "Other" is selected */}
+              {formData.reason === 'Other' && (
+                <div className="space-y-2">
+                  <Label htmlFor="other_reason">Please Specify Your Reason *</Label>
+                  <Textarea
+                    id="other_reason"
+                    name="other_reason"
+                    value={formData.other_reason}
+                    onChange={handleChange}
+                    required
+                    placeholder="Please describe your reason for requesting the recommendation letter..."
+                    rows={3}
+                    data-testid="other-reason-input"
+                  />
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Date Needed By *</Label>
