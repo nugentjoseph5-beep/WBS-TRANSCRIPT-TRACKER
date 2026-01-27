@@ -91,11 +91,23 @@ export default function NewRecommendation() {
       return;
     }
 
+    // Validate reason
+    if (!formData.reason) {
+      toast.error('Please select a reason for the request');
+      return;
+    }
+
+    // Validate other reason if "Other" is selected
+    if (formData.reason === 'Other' && !formData.other_reason.trim()) {
+      toast.error('Please specify your reason for the request');
+      return;
+    }
+
     // Validate required fields
     const requiredFields = [
       'first_name', 'last_name', 'email', 'phone_number', 'address',
       'last_form_class', 'institution_name', 
-      'institution_address', 'program_name', 'collection_method'
+      'institution_address', 'program_name', 'collection_method', 'reason'
     ];
     
     for (const field of requiredFields) {
