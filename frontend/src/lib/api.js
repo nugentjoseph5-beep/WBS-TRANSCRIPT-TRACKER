@@ -112,4 +112,11 @@ export const analyticsAPI = {
   get: () => api.get('/analytics'),
 };
 
+// Admin Data Management API
+export const dataManagementAPI = {
+  getSummary: () => api.get('/admin/data-summary'),
+  exportAllData: () => api.get('/admin/export-all-data/pdf', { responseType: 'blob' }),
+  clearAllData: () => api.delete('/admin/clear-all-data'),
+};
+
 export default api;
