@@ -1584,6 +1584,7 @@ class WolmersTranscriptAPITester:
             "phone_number": "+1 876 555 3333",
             "address": "123 Activities Street, Kingston, Jamaica",
             "years_attended": [{"from_year": "2016", "to_year": "2021"}],
+            "enrollment_status": "graduate",  # REQUIRED FIELD
             "last_form_class": "Upper 6th",
             "co_curricular_activities": "Initial activities list",
             "institution_name": "Activities University",
