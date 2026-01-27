@@ -672,6 +672,7 @@ class WolmersTranscriptAPITester:
             "phone_number": "+1 876 555 1234",
             "address": "456 Hope Road, Kingston 10, Jamaica",
             "years_attended": [{"from_year": "2015", "to_year": "2020"}, {"from_year": "2021", "to_year": "2022"}],  # NEW ARRAY FORMAT
+            "enrollment_status": "graduate",  # REQUIRED FIELD
             "last_form_class": "Upper 6th",
             "co_curricular_activities": "Head Boy 2021-2022, Captain of Football Team, Member of Debate Club, Science Fair Winner 2020",  # NEW FIELD
             "institution_name": "Harvard University",
