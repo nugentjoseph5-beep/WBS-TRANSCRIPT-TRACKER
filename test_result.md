@@ -937,7 +937,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Status Notes Functionality for Transcripts and Recommendations"
+    - "Admin Data Management APIs (Clear All Data, Export All Data, Data Summary)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
