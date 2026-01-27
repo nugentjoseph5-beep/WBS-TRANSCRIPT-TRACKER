@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
-import { analyticsAPI, requestAPI, recommendationAPI, notificationAPI, exportAPI } from '@/lib/api';
+import { analyticsAPI, requestAPI, recommendationAPI, notificationAPI, exportAPI, dataManagementAPI } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDate, getStatusBadgeClass, exportAnalyticsToPDF, exportAnalyticsToCSV } from '@/lib/utils';
@@ -13,7 +13,7 @@ import {
 import { 
   LayoutDashboard, FileText, Users, Bell, LogOut, Menu, X,
   Clock, CheckCircle, AlertCircle, XCircle, TrendingUp, AlertTriangle, UserCheck, Award,
-  Download, FileSpreadsheet, FileType
+  Download, FileSpreadsheet, FileType, Trash2, Database, AlertOctagon
 } from 'lucide-react';
 
 const COLORS = ['#800000', '#FFD700', '#78716C', '#22c55e', '#3b82f6', '#ef4444'];
