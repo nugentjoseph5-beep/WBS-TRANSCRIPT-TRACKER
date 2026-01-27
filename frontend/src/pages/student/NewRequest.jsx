@@ -91,6 +91,12 @@ export default function NewRequest() {
       return;
     }
 
+    // Validate other reason if "Other" is selected
+    if (formData.reason === 'Other' && !formData.other_reason.trim()) {
+      toast.error('Please specify your reason for the request');
+      return;
+    }
+
     // Validate all institution fields are filled
     if (!formData.institution_name) {
       toast.error('Please enter the institution name');
