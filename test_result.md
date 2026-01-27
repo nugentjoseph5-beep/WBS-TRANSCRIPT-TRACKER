@@ -433,6 +433,72 @@ backend:
         
         All admin dashboard charts have proper backend data support and are ready for production use."
 
+  - task: "Form Field Updates for Transcript and Recommendation Requests"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Form field updates implemented:
+        
+        TRANSCRIPT REQUEST CHANGES:
+        • school_id field is now OPTIONAL (was required before)
+        • wolmers_email field is now OPTIONAL (was required before)
+        • other_reason field added (should be required when reason is 'Other')
+        
+        RECOMMENDATION REQUEST CHANGES:
+        • reason field added (new required field)
+        • other_reason field added (should be required when reason is 'Other')
+        
+        All changes implemented in backend models and endpoints."
+      - working: true
+        agent: "testing"
+        comment: "✅ FORM FIELD UPDATES TESTING COMPLETED SUCCESSFULLY - All form field changes working correctly:
+        
+        🎯 TEST SCENARIOS VERIFIED:
+        
+        ✅ TEST 1: Transcript Request without school_id and wolmers_email
+        • Created transcript request with empty school_id and wolmers_email fields
+        • Request created successfully with status 'Pending'
+        • Optional fields handled correctly (empty strings returned)
+        • Confirms school_id and wolmers_email are now OPTIONAL
+        
+        ✅ TEST 2: Transcript Request with reason 'Other' and other_reason
+        • Created transcript request with reason='Other' and other_reason='Testing custom reason for transcript request'
+        • Request created successfully with both fields saved correctly
+        • other_reason field properly stored when reason is 'Other'
+        
+        ✅ TEST 3: Recommendation Request with reason field
+        • Created recommendation request with reason='University application'
+        • Request created successfully with new reason field saved
+        • Confirms reason field is now available and working as required field
+        
+        ✅ TEST 4: Recommendation Request with reason 'Other' and other_reason
+        • Created recommendation request with reason='Other' and other_reason='Special application for scholarship program'
+        • Request created successfully with both reason fields saved correctly
+        • other_reason field properly stored when reason is 'Other'
+        
+        🔐 AUTHENTICATION VERIFIED:
+        • ✅ Admin login: admin@wolmers.org / Admin123! - working
+        • ✅ Student registration and login - working
+        • ✅ All API endpoints accessible with proper authentication
+        
+        📊 API ENDPOINTS TESTED:
+        • ✅ POST /api/requests - Transcript request creation with optional fields
+        • ✅ POST /api/recommendations - Recommendation request creation with new reason fields
+        
+        🎯 SUCCESS CRITERIA MET:
+        ✅ school_id and wolmers_email are now optional for transcript requests
+        ✅ other_reason field works for both transcript and recommendation requests when reason is 'Other'
+        ✅ reason field added to recommendation requests as required field
+        ✅ All form submissions work correctly with new field configurations
+        
+        All form field updates are fully functional and ready for production use."
+
   - task: "Status Notes Functionality for Transcripts and Recommendations"
     implemented: true
     working: true
