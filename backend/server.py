@@ -143,14 +143,15 @@ class TranscriptRequestResponse(BaseModel):
     first_name: str
     middle_name: str
     last_name: str
-    school_id: str
+    school_id: str = ""
     enrollment_status: str
     academic_years: List[dict] = []  # List of {"from_year": "2015", "to_year": "2020"}
     academic_year: str = ""  # Legacy field for backward compatibility
-    wolmers_email: str
+    wolmers_email: str = ""
     personal_email: str
     phone_number: str
     reason: str
+    other_reason: str = ""
     needed_by_date: str
     collection_method: str
     delivery_address: str = ""
