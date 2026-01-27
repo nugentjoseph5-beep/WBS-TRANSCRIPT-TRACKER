@@ -1902,6 +1902,13 @@ class WolmersTranscriptAPITester:
             if not student_reg_success:
                 self.test_student_login()
         
+        # PRIORITY TESTS FOR REVIEW REQUEST - Form Field Updates
+        print("\n" + "🎯" * 30)
+        print("🎯 PRIORITY TESTS - FORM FIELD UPDATES (Review Request Focus)")
+        print("🎯" * 30)
+        self.test_form_field_updates_transcript()
+        self.test_form_field_updates_recommendation()
+        
         # User management tests
         if admin_login_success:
             if not staff_login_success:
