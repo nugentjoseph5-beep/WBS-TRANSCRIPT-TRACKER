@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 def test_edit_recommendation_issue():
     """Test the specific edit recommendation issue"""
-    base_url = "https://transcript-rec.preview.emergentagent.com"
+    base_url = "https://transcript-rec-app.preview.emergentagent.com"
     
     # Login as student
     response = requests.post(f"{base_url}/api/auth/login", json={

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import uuid
 
 class ReviewRequestTester:
-    def __init__(self, base_url="https://transcript-rec.preview.emergentagent.com"):
+    def __init__(self, base_url="https://transcript-rec-app.preview.emergentagent.com"):
         self.base_url = base_url
         self.admin_token = None
         self.student_token = None
