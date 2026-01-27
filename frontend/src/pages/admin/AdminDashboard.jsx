@@ -920,10 +920,180 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Data Management Section */}
+              <Card className="mt-8 border-2 border-red-200 bg-red-50/30">
+                <CardHeader>
+                  <CardTitle className="font-heading text-lg flex items-center gap-2 text-red-700">
+                    <Database className="h-5 w-5" />
+                    Data Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-white rounded-lg p-4 border border-red-100">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div>
+                        <h3 className="font-semibold text-stone-900 flex items-center gap-2">
+                          <AlertOctagon className="h-4 w-4 text-red-500" />
+                          Clear All System Data
+                        </h3>
+                        <p className="text-sm text-stone-600 mt-1">
+                          Remove all users (except admin), transcript requests, recommendation requests, and notifications.
+                          This action cannot be undone.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={handleExportAllData}
+                          disabled={exportLoading}
+                          className="border-maroon-300 text-maroon-700 hover:bg-maroon-50"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          {exportLoading ? 'Exporting...' : 'Export All Data (PDF)'}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={openClearModal}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Clear All Data
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </>
           )}
         </main>
       </div>
+
+      {/* Clear Data Confirmation Modal */}
+      {showClearModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+            {/* Header */}
+            <div className="bg-red-600 p-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Clear All Data</h2>
+                  <p className="text-red-100 text-sm">This action is irreversible</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Data Summary */}
+              {dataSummary && (
+                <div className="bg-stone-50 rounded-lg p-4 mb-4">
+                  <h3 className="font-semibold text-stone-900 mb-3">Data to be deleted:</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-stone-600">Users:</span>
+                      <span className="font-medium text-red-600">{dataSummary.users}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-600">Transcripts:</span>
+                      <span className="font-medium text-red-600">{dataSummary.transcript_requests}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-600">Recommendations:</span>
+                      <span className="font-medium text-red-600">{dataSummary.recommendation_requests}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone-600">Notifications:</span>
+                      <span className="font-medium text-red-600">{dataSummary.notifications}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-stone-200 flex justify-between">
+                    <span className="font-semibold text-stone-900">Total Records:</span>
+                    <span className="font-bold text-red-600">{dataSummary.total}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Export Reminder */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <Download className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-amber-800 font-medium">Export data before clearing?</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      Download a PDF backup of all current data before proceeding.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleExportAllData}
+                      disabled={exportLoading}
+                      className="mt-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      {exportLoading ? 'Exporting...' : 'Export to PDF'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Confirmation Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-stone-700 mb-2">
+                  Type <span className="font-bold text-red-600">DELETE ALL DATA</span> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  placeholder="Type confirmation text..."
+                />
+              </div>
+
+              {/* Warning */}
+              <p className="text-xs text-stone-500 mb-4">
+                <strong>Note:</strong> The admin account (admin@wolmers.org) will be preserved.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-stone-50 px-6 py-4 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowClearModal(false);
+                  setConfirmText('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleClearAllData}
+                disabled={clearingData || confirmText !== 'DELETE ALL DATA'}
+                className="bg-red-600 hover:bg-red-700 disabled:bg-red-300"
+              >
+                {clearingData ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Clearing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear All Data
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
