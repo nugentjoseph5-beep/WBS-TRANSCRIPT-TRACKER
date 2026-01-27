@@ -35,6 +35,7 @@ export default function NewRequest() {
     phone_number: '',
     last_form_class: '',
     reason: '',
+    other_reason: '',
     collection_method: '',
     delivery_address: '',
     institution_name: '',
