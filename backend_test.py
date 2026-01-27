@@ -1796,6 +1796,13 @@ class WolmersTranscriptAPITester:
         print("🎯" * 20)
         self.test_export_endpoints()
         
+        # PRIORITY: Test ADMIN DATA MANAGEMENT (NEW FEATURE)
+        print("\n" + "🎯" * 20)
+        print("🎯 PRIORITY: ADMIN DATA MANAGEMENT TESTING")
+        print("🎯" * 20)
+        self.test_admin_data_management()
+        self.test_admin_data_management_permissions()
+        
         # Notification tests
         self.test_notifications()
         
