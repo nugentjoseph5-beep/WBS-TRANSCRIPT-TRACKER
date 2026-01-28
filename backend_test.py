@@ -576,14 +576,18 @@ class WolmersTranscriptAPITester:
             print("❌ Cannot create student account for testing")
             return
         
-        # Create staff account for workload testing
-        if not self.test_create_staff_user():
-            print("❌ Cannot create staff account for testing")
-            return
+        # Try to login with existing staff credentials first
+        staff_login_success = self.test_staff_login_specific()
         
-        if not self.test_staff_login_specific():
-            print("❌ Cannot login staff account for testing")
-            return
+        if not staff_login_success:
+            # Create staff account for workload testing
+            if not self.test_create_staff_user():
+                print("❌ Cannot create staff account for testing")
+                return
+            
+            # Try to login with the newly created staff account
+            if not self.test_staff_login():
+                print("⚠️ Staff login failed, continuing without staff tests")
         
         # Run comprehensive analytics tests
         self.test_admin_dashboard_analytics_comprehensive()
