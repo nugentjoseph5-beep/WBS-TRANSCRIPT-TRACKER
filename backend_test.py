@@ -2286,8 +2286,36 @@ class WolmersTranscriptAPITester:
             return 1
 
 def main():
+    """Main test runner for Admin Dashboard Analytics API Testing"""
     tester = WolmersTranscriptAPITester()
-    return tester.run_all_tests()
+    
+    print("🚀 Starting Admin Dashboard Analytics API Testing...")
+    print("🎯 Focus: Verifying charts correctly reflect recommendation data")
+    
+    # Run the comprehensive admin dashboard analytics tests
+    tester.run_admin_dashboard_analytics_tests()
+    
+    # Print final summary
+    print("\n" + "="*80)
+    print("📋 FINAL TEST SUMMARY")
+    print("="*80)
+    
+    if tester.tests_passed == tester.tests_run:
+        print("🎉 ALL TESTS PASSED!")
+    else:
+        failed_tests = tester.tests_run - tester.tests_passed
+        print(f"⚠️  {failed_tests} test(s) failed out of {tester.tests_run}")
+    
+    print(f"\nSuccess Rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
+    
+    # Print failed tests for debugging
+    failed_tests = [result for result in tester.test_results if not result['success']]
+    if failed_tests:
+        print(f"\n❌ Failed Tests:")
+        for test in failed_tests:
+            print(f"   • {test['test']}: {test['details']}")
+    
+    return 0 if tester.tests_passed == tester.tests_run else 1
 
 if __name__ == "__main__":
     sys.exit(main())
