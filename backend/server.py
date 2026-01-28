@@ -1235,6 +1235,7 @@ async def create_recommendation_request(request_data: RecommendationRequestCreat
         "address": request_data.address,
         "years_attended": request_data.years_attended,
         "years_attended_str": years_attended_str,  # Legacy field
+        "enrollment_status": request_data.enrollment_status,  # Added missing field
         "last_form_class": request_data.last_form_class,
         "co_curricular_activities": request_data.co_curricular_activities or "",
         "reason": request_data.reason,
