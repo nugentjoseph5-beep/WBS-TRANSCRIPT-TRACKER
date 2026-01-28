@@ -596,9 +596,57 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              {/* Charts Row 1 */}
+              {/* Charts Row 1 - Overdue & Collection Methods */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Enrollment Status Chart */}
+                {/* 1. Overdue Requests */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-orange-500" />
+                      Overdue Requests
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent id="overdue-requests-chart">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={overdueComparison} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={120} />
+                        <Tooltip />
+                        <Bar dataKey="value" name="Overdue Count">
+                          {overdueComparison.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* 2. Collection Methods Comparison */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg">Collection Methods Comparison</CardTitle>
+                  </CardHeader>
+                  <CardContent id="collection-methods-chart">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={collectionMethodComparison}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="transcripts" fill="#800000" name="Transcripts" />
+                        <Bar dataKey="recommendations" fill="#DAA520" name="Recommendations" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 2 - Enrollment Status */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* 3. Transcripts by Enrollment Status */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="font-heading text-lg">Transcripts by Enrollment Status</CardTitle>
@@ -632,153 +680,7 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Collection Method Comparison */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg">Collection Methods Comparison</CardTitle>
-                  </CardHeader>
-                  <CardContent id="collection-methods-chart">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={collectionMethodComparison}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="transcripts" fill="#800000" name="Transcripts" />
-                        <Bar dataKey="recommendations" fill="#DAA520" name="Recommendations" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Charts Row 2 */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Overdue Comparison */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-orange-500" />
-                      Overdue Requests
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent id="overdue-requests-chart">
-                    <ResponsiveContainer width="100%" height={250}>
-                      <BarChart data={overdueComparison} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis dataKey="name" type="category" width={120} />
-                        <Tooltip />
-                        <Bar dataKey="value" name="Overdue Count">
-                          {overdueComparison.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Status Distribution Comparison */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg">Recommendation Status Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent id="recommendation-status-chart">
-                    {recommendationStatusData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={250}>
-                        <PieChart>
-                          <Pie
-                            data={recommendationStatusData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={50}
-                            outerRadius={90}
-                            paddingAngle={2}
-                            dataKey="value"
-                          >
-                            {recommendationStatusData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[250px] flex items-center justify-center text-stone-500">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Staff Workload */}
-              {staffWorkloadData.length > 0 && (
-                <Card className="mb-8">
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg flex items-center gap-2">
-                      <UserCheck className="h-5 w-5" />
-                      Staff Workload Distribution
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent id="staff-workload-chart">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={staffWorkloadData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="requests" name="Assigned Requests">
-                          {staffWorkloadData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={WORKLOAD_COLORS[index % WORKLOAD_COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Charts Row 3 - NEW CHARTS */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Transcript Status Distribution */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading text-lg">Transcript Status Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent id="transcript-status-chart">
-                    {transcriptStatusData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={transcriptStatusData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
-                            paddingAngle={2}
-                            dataKey="value"
-                          >
-                            {transcriptStatusData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                          <Legend />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[300px] flex items-center justify-center text-stone-500">
-                        No data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Recommendations by Enrollment Status */}
+                {/* 4. Recommendations by Enrollment Status */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="font-heading text-lg">Recommendations by Enrollment Status</CardTitle>
@@ -813,7 +715,105 @@ export default function AdminDashboard() {
                 </Card>
               </div>
 
-              {/* Charts Row 4 - Monthly Trend */}
+              {/* Charts Row 3 - Status Distribution */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                {/* 5. Transcript Status Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg">Transcript Status Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent id="transcript-status-chart">
+                    {transcriptStatusData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={transcriptStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {transcriptStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-stone-500">
+                        No data available
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* 6. Recommendation Status Distribution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg">Recommendation Status Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent id="recommendation-status-chart">
+                    {recommendationStatusData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={recommendationStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {recommendationStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-stone-500">
+                        No data available
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 7. Staff Workload Distribution */}
+              {staffWorkloadData.length > 0 && (
+                <Card className="mb-8">
+                  <CardHeader>
+                    <CardTitle className="font-heading text-lg flex items-center gap-2">
+                      <UserCheck className="h-5 w-5" />
+                      Staff Workload Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent id="staff-workload-chart">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={staffWorkloadData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="requests" name="Assigned Requests">
+                          {staffWorkloadData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={WORKLOAD_COLORS[index % WORKLOAD_COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 8. Monthly Requests Trend */}
               <Card className="mb-8">
                 <CardHeader>
                   <CardTitle className="font-heading text-lg flex items-center gap-2">
