@@ -1764,20 +1764,34 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
     in_progress_rec = await db.recommendation_requests.count_documents({"status": "In Progress"})
     rejected_rec = await db.recommendation_requests.count_documents({"status": "Rejected"})
     
-    # Recommendations by enrollment status
+    # Recommendations by enrollment status (handle different case variations)
     recommendations_by_enrollment = []
-    for status in ["Enrolled", "Graduate", "Withdrawn"]:
-        count = await db.recommendation_requests.count_documents({"enrollment_status": status})
-        if count > 0:
-            recommendations_by_enrollment.append({"name": status, "value": count})
     
-    # If no data, provide default
-    if not recommendations_by_enrollment:
-        recommendations_by_enrollment = [
-            {"name": "Enrolled", "value": 0},
-            {"name": "Graduate", "value": 0},
-            {"name": "Withdrawn", "value": 0}
-        ]
+    # Get all enrollment statuses from recommendation requests
+    rec_enrollment_counts = await db.recommendation_requests.aggregate([
+        {"$group": {"_id": "$enrollment_status", "count": {"$sum": 1}}}
+    ]).to_list(10)
+    
+    # Normalize and aggregate enrollment counts
+    enrolled_count = 0
+    graduate_count = 0
+    withdrawn_count = 0
+    
+    for item in rec_enrollment_counts:
+        status = (item["_id"] or "").lower()
+        count = item["count"]
+        if status in ["enrolled", "currently enrolled"]:
+            enrolled_count += count
+        elif status in ["graduate", "graduate/alumni", "alumni"]:
+            graduate_count += count
+        elif status in ["withdrawn"]:
+            withdrawn_count += count
+    
+    recommendations_by_enrollment = [
+        {"name": "Enrolled", "value": enrolled_count},
+        {"name": "Graduate", "value": graduate_count},
+        {"name": "Withdrawn", "value": withdrawn_count}
+    ]
     
     # Get overdue recommendation requests
     overdue_rec_count = 0
