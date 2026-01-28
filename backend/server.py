@@ -473,6 +473,8 @@ def normalize_recommendation_data(request_data: dict) -> dict:
         data["reason"] = ""
     if "other_reason" not in data or data.get("other_reason") is None:
         data["other_reason"] = ""
+    if "enrollment_status" not in data or data.get("enrollment_status") is None:
+        data["enrollment_status"] = ""
     
     return data
 
