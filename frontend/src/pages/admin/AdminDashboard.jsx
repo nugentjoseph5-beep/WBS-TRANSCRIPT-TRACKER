@@ -228,8 +228,8 @@ export default function AdminDashboard() {
   // NEW: Monthly requests trend data
   const monthlyTrendData = analytics?.requests_by_month?.map(item => ({
     month: item.month,
-    transcripts: item.count || 0,
-    recommendations: 0 // Will be populated from backend if available
+    transcripts: item.transcripts || item.count || 0,
+    recommendations: item.recommendations || 0
   })) || [];
 
   // Collection method comparison
