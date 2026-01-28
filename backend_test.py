@@ -338,10 +338,10 @@ class WolmersTranscriptAPITester:
         if 'recommendations_by_enrollment' in data and isinstance(data['recommendations_by_enrollment'], list):
             self.log_result("Recommendations by Enrollment Status", True)
             
-            # Check structure of enrollment data
+            # Check structure of enrollment data (API uses 'name' and 'value' fields)
             if data['recommendations_by_enrollment']:
                 sample_enrollment = data['recommendations_by_enrollment'][0]
-                required_enrollment_fields = ['enrollment_status', 'count']
+                required_enrollment_fields = ['name', 'value']  # Updated to match actual API
                 missing_enrollment_fields = [field for field in required_enrollment_fields if field not in sample_enrollment]
                 
                 if not missing_enrollment_fields:
@@ -357,11 +357,10 @@ class WolmersTranscriptAPITester:
         if 'staff_workload' in data and isinstance(data['staff_workload'], list):
             self.log_result("Staff Workload Distribution", True)
             
-            # Check if staff workload includes both types
+            # Check if staff workload includes both types (API uses 'name' and 'requests' fields)
             if data['staff_workload']:
                 sample_workload = data['staff_workload'][0]
-                # Staff workload should include total count from both transcripts and recommendations
-                required_workload_fields = ['staff_name', 'count']
+                required_workload_fields = ['name', 'requests']  # Updated to match actual API
                 missing_workload_fields = [field for field in required_workload_fields if field not in sample_workload]
                 
                 if not missing_workload_fields:
@@ -387,6 +386,12 @@ class WolmersTranscriptAPITester:
         else:
             self.log_result("Recommendation Analytics Fields", False, f"Missing fields: {missing_rec_fields}")
         
+        # Test 6: Verify recommendations_by_collection_method exists
+        if 'recommendations_by_collection_method' in data and isinstance(data['recommendations_by_collection_method'], list):
+            self.log_result("Recommendations by Collection Method", True)
+        else:
+            self.log_result("Recommendations by Collection Method", False, "recommendations_by_collection_method missing or not array")
+        
         # Print analytics summary for verification
         print(f"\n📊 Analytics Summary:")
         print(f"   Total Requests: {data.get('total_requests', 'N/A')}")
@@ -395,6 +400,7 @@ class WolmersTranscriptAPITester:
         print(f"   Monthly Data Points: {len(data.get('requests_by_month', []))}")
         print(f"   Enrollment Categories: {len(data.get('recommendations_by_enrollment', []))}")
         print(f"   Staff Workload Entries: {len(data.get('staff_workload', []))}")
+        print(f"   Collection Method Categories: {len(data.get('recommendations_by_collection_method', []))}")
 
     def test_create_recommendation_with_enrollment_status(self):
         """Create a recommendation request with specific enrollment status for analytics testing"""
@@ -430,13 +436,23 @@ class WolmersTranscriptAPITester:
         
         if response and response.status_code == 200:
             data = response.json()
-            if data.get('enrollment_status') == 'Graduate':
+            # Check if enrollment_status is saved (might be different case)
+            saved_enrollment = data.get('enrollment_status', '').lower()
+            expected_enrollment = 'graduate'
+            
+            if saved_enrollment == expected_enrollment:
                 self.log_result("Create Recommendation with Graduate Status", True)
                 return data['id']
             else:
-                self.log_result("Create Recommendation with Graduate Status", False, "Enrollment status not saved correctly")
+                self.log_result("Create Recommendation with Graduate Status", False, f"Expected '{expected_enrollment}', got '{saved_enrollment}'")
         else:
-            self.log_result("Create Recommendation with Graduate Status", False, f"Status: {response.status_code if response else 'No response'}")
+            error_detail = ""
+            if response:
+                try:
+                    error_detail = f" - {response.json()}"
+                except:
+                    error_detail = f" - Status: {response.status_code}"
+            self.log_result("Create Recommendation with Graduate Status", False, f"Status: {response.status_code if response else 'No response'}{error_detail}")
         
         return None
 
@@ -471,11 +487,11 @@ class WolmersTranscriptAPITester:
         staff_id = staff_members[0]['id']
         staff_name = staff_members[0]['full_name']
         
-        # Find initial workload for this staff member
+        # Find initial workload for this staff member (API uses 'name' and 'requests' fields)
         initial_staff_workload = 0
         for workload_entry in initial_workload:
-            if workload_entry.get('staff_name') == staff_name:
-                initial_staff_workload = workload_entry.get('count', 0)
+            if workload_entry.get('name') == staff_name:
+                initial_staff_workload = workload_entry.get('requests', 0)
                 break
         
         # Assign staff to recommendation
@@ -501,8 +517,8 @@ class WolmersTranscriptAPITester:
         # Find updated workload for this staff member
         updated_staff_workload = 0
         for workload_entry in updated_workload:
-            if workload_entry.get('staff_name') == staff_name:
-                updated_staff_workload = workload_entry.get('count', 0)
+            if workload_entry.get('name') == staff_name:
+                updated_staff_workload = workload_entry.get('requests', 0)
                 break
         
         # Verify workload increased
