@@ -1698,20 +1698,39 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
             {"name": "Physical Delivery", "value": collection_map.get("delivery", 0)}
         ]
         
-        # Parse staff workload
+        # Parse staff workload - include both transcripts and recommendations
         staff_workload_map = {item["_id"]: item["count"] for item in data["staff_workload"]}
+        
+        # Get recommendation staff workload
+        rec_staff_workload = await db.recommendation_requests.aggregate([
+            {"$match": {"assigned_staff_id": {"$ne": None}}},
+            {"$group": {"_id": "$assigned_staff_id", "count": {"$sum": 1}}}
+        ]).to_list(100)
+        
+        # Merge transcript and recommendation workloads
+        for item in rec_staff_workload:
+            staff_id = item["_id"]
+            if staff_id in staff_workload_map:
+                staff_workload_map[staff_id] += item["count"]
+            else:
+                staff_workload_map[staff_id] = item["count"]
+        
         staff_workload = []
         for staff_id, count in staff_workload_map.items():
             staff = await db.users.find_one({"id": staff_id})
             staff_name = staff["full_name"] if staff else "Unknown"
             staff_workload.append({"name": staff_name, "requests": count})
         
-        # Add unassigned count
-        unassigned_count = await db.transcript_requests.count_documents({
+        # Add unassigned count (both transcripts and recommendations)
+        unassigned_transcript_count = await db.transcript_requests.count_documents({
             "$or": [{"assigned_staff_id": None}, {"assigned_staff_id": {"$exists": False}}]
         })
-        if unassigned_count > 0:
-            staff_workload.append({"name": "Unassigned", "requests": unassigned_count})
+        unassigned_rec_count = await db.recommendation_requests.count_documents({
+            "$or": [{"assigned_staff_id": None}, {"assigned_staff_id": {"$exists": False}}]
+        })
+        total_unassigned = unassigned_transcript_count + unassigned_rec_count
+        if total_unassigned > 0:
+            staff_workload.append({"name": "Unassigned", "requests": total_unassigned})
         
     else:
         total = pending = in_progress = processing = ready = completed = rejected = 0
