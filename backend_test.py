@@ -293,6 +293,309 @@ class WolmersTranscriptAPITester:
         else:
             self.log_result("Get analytics", False, f"Status: {response.status_code if response else 'No response'}")
 
+    def test_admin_dashboard_analytics_comprehensive(self):
+        """Test Admin Dashboard Analytics API with focus on recommendation data integration"""
+        print("\n🔍 Testing Admin Dashboard Analytics - Comprehensive Review Request Testing...")
+        
+        if not self.admin_token:
+            self.log_result("Admin Dashboard Analytics - Comprehensive", False, "No admin token available")
+            return
+        
+        # Test 1: GET /api/analytics - Verify response structure
+        response, error = self.make_request('GET', 'analytics', token=self.admin_token)
+        
+        if not response or response.status_code != 200:
+            self.log_result("Analytics API Response", False, f"Status: {response.status_code if response else 'No response'}")
+            return
+        
+        data = response.json()
+        self.log_result("Analytics API Response", True)
+        
+        # Test 2: Verify requests_by_month contains both transcripts and recommendations
+        if 'requests_by_month' in data and isinstance(data['requests_by_month'], list):
+            has_transcripts_field = False
+            has_recommendations_field = False
+            
+            for month_data in data['requests_by_month']:
+                if 'transcripts' in month_data:
+                    has_transcripts_field = True
+                if 'recommendations' in month_data:
+                    has_recommendations_field = True
+            
+            if has_transcripts_field and has_recommendations_field:
+                self.log_result("Monthly Requests Trend - Both Types", True)
+            else:
+                missing = []
+                if not has_transcripts_field:
+                    missing.append('transcripts')
+                if not has_recommendations_field:
+                    missing.append('recommendations')
+                self.log_result("Monthly Requests Trend - Both Types", False, f"Missing fields: {missing}")
+        else:
+            self.log_result("Monthly Requests Trend - Both Types", False, "requests_by_month missing or not array")
+        
+        # Test 3: Verify recommendations_by_enrollment has proper structure
+        if 'recommendations_by_enrollment' in data and isinstance(data['recommendations_by_enrollment'], list):
+            self.log_result("Recommendations by Enrollment Status", True)
+            
+            # Check structure of enrollment data
+            if data['recommendations_by_enrollment']:
+                sample_enrollment = data['recommendations_by_enrollment'][0]
+                required_enrollment_fields = ['enrollment_status', 'count']
+                missing_enrollment_fields = [field for field in required_enrollment_fields if field not in sample_enrollment]
+                
+                if not missing_enrollment_fields:
+                    self.log_result("Recommendations by Enrollment - Structure", True)
+                else:
+                    self.log_result("Recommendations by Enrollment - Structure", False, f"Missing fields: {missing_enrollment_fields}")
+            else:
+                self.log_result("Recommendations by Enrollment - Structure", True, "Empty array (no data yet)")
+        else:
+            self.log_result("Recommendations by Enrollment Status", False, "recommendations_by_enrollment missing or not array")
+        
+        # Test 4: Verify staff_workload includes both request types
+        if 'staff_workload' in data and isinstance(data['staff_workload'], list):
+            self.log_result("Staff Workload Distribution", True)
+            
+            # Check if staff workload includes both types
+            if data['staff_workload']:
+                sample_workload = data['staff_workload'][0]
+                # Staff workload should include total count from both transcripts and recommendations
+                required_workload_fields = ['staff_name', 'count']
+                missing_workload_fields = [field for field in required_workload_fields if field not in sample_workload]
+                
+                if not missing_workload_fields:
+                    self.log_result("Staff Workload - Structure", True)
+                else:
+                    self.log_result("Staff Workload - Structure", False, f"Missing fields: {missing_workload_fields}")
+            else:
+                self.log_result("Staff Workload - Structure", True, "Empty array (no assignments yet)")
+        else:
+            self.log_result("Staff Workload Distribution", False, "staff_workload missing or not array")
+        
+        # Test 5: Verify recommendation-specific analytics fields
+        recommendation_fields = [
+            'total_recommendation_requests',
+            'pending_recommendation_requests', 
+            'completed_recommendation_requests',
+            'overdue_recommendation_requests'
+        ]
+        
+        missing_rec_fields = [field for field in recommendation_fields if field not in data]
+        if not missing_rec_fields:
+            self.log_result("Recommendation Analytics Fields", True)
+        else:
+            self.log_result("Recommendation Analytics Fields", False, f"Missing fields: {missing_rec_fields}")
+        
+        # Print analytics summary for verification
+        print(f"\n📊 Analytics Summary:")
+        print(f"   Total Requests: {data.get('total_requests', 'N/A')}")
+        print(f"   Total Recommendations: {data.get('total_recommendation_requests', 'N/A')}")
+        print(f"   Pending Recommendations: {data.get('pending_recommendation_requests', 'N/A')}")
+        print(f"   Monthly Data Points: {len(data.get('requests_by_month', []))}")
+        print(f"   Enrollment Categories: {len(data.get('recommendations_by_enrollment', []))}")
+        print(f"   Staff Workload Entries: {len(data.get('staff_workload', []))}")
+
+    def test_create_recommendation_with_enrollment_status(self):
+        """Create a recommendation request with specific enrollment status for analytics testing"""
+        print("\n🔍 Creating Recommendation with Graduate Enrollment Status...")
+        
+        if not self.student_token:
+            self.log_result("Create Recommendation with Enrollment Status", False, "No student token available")
+            return None
+        
+        needed_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        request_data = {
+            "first_name": "Analytics",
+            "middle_name": "Test",
+            "last_name": "Graduate",
+            "email": "analytics.test@email.com",
+            "phone_number": "+1 876 555 1111",
+            "address": "Analytics Test Address, Kingston, Jamaica",
+            "years_attended": [{"from_year": "2018", "to_year": "2023"}],
+            "enrollment_status": "Graduate",  # Specific enrollment status for testing
+            "last_form_class": "Upper 6th",
+            "co_curricular_activities": "Analytics Club President",
+            "reason": "University application",
+            "institution_name": "Analytics University",
+            "institution_address": "Analytics University Address",
+            "directed_to": "Admissions Office",
+            "program_name": "Data Science",
+            "needed_by_date": needed_date,
+            "collection_method": "pickup"
+        }
+        
+        response, error = self.make_request('POST', 'recommendations', request_data, token=self.student_token)
+        
+        if response and response.status_code == 200:
+            data = response.json()
+            if data.get('enrollment_status') == 'Graduate':
+                self.log_result("Create Recommendation with Graduate Status", True)
+                return data['id']
+            else:
+                self.log_result("Create Recommendation with Graduate Status", False, "Enrollment status not saved correctly")
+        else:
+            self.log_result("Create Recommendation with Graduate Status", False, f"Status: {response.status_code if response else 'No response'}")
+        
+        return None
+
+    def test_staff_assignment_and_workload_verification(self, request_id):
+        """Test staff assignment and verify workload count increases"""
+        print("\n🔍 Testing Staff Assignment and Workload Verification...")
+        
+        if not request_id or not self.admin_token:
+            self.log_result("Staff Assignment and Workload", False, "Missing request ID or admin token")
+            return
+        
+        # Get initial analytics to check staff workload before assignment
+        response, error = self.make_request('GET', 'analytics', token=self.admin_token)
+        if not response or response.status_code != 200:
+            self.log_result("Staff Workload - Initial Check", False, "Could not get initial analytics")
+            return
+        
+        initial_analytics = response.json()
+        initial_workload = initial_analytics.get('staff_workload', [])
+        
+        # Get staff members
+        response, error = self.make_request('GET', 'admin/staff', token=self.admin_token)
+        if not response or response.status_code != 200:
+            self.log_result("Staff Assignment and Workload", False, "Could not get staff members")
+            return
+        
+        staff_members = response.json()
+        if not staff_members:
+            self.log_result("Staff Assignment and Workload", False, "No staff members available")
+            return
+        
+        staff_id = staff_members[0]['id']
+        staff_name = staff_members[0]['full_name']
+        
+        # Find initial workload for this staff member
+        initial_staff_workload = 0
+        for workload_entry in initial_workload:
+            if workload_entry.get('staff_name') == staff_name:
+                initial_staff_workload = workload_entry.get('count', 0)
+                break
+        
+        # Assign staff to recommendation
+        response, error = self.make_request('PATCH', f'recommendations/{request_id}', {
+            "assigned_staff_id": staff_id
+        }, token=self.admin_token)
+        
+        if not response or response.status_code != 200:
+            self.log_result("Staff Assignment and Workload", False, f"Assignment failed: {response.status_code if response else 'No response'}")
+            return
+        
+        self.log_result("Staff Assignment", True)
+        
+        # Get updated analytics to verify workload increase
+        response, error = self.make_request('GET', 'analytics', token=self.admin_token)
+        if not response or response.status_code != 200:
+            self.log_result("Staff Workload - After Assignment", False, "Could not get updated analytics")
+            return
+        
+        updated_analytics = response.json()
+        updated_workload = updated_analytics.get('staff_workload', [])
+        
+        # Find updated workload for this staff member
+        updated_staff_workload = 0
+        for workload_entry in updated_workload:
+            if workload_entry.get('staff_name') == staff_name:
+                updated_staff_workload = workload_entry.get('count', 0)
+                break
+        
+        # Verify workload increased
+        if updated_staff_workload > initial_staff_workload:
+            self.log_result("Staff Workload Count Increase", True)
+            print(f"   Staff workload increased from {initial_staff_workload} to {updated_staff_workload}")
+        else:
+            self.log_result("Staff Workload Count Increase", False, f"Workload did not increase: {initial_staff_workload} -> {updated_staff_workload}")
+
+    def test_analytics_after_recommendation_creation(self):
+        """Test that analytics updates correctly after creating recommendation data"""
+        print("\n🔍 Testing Analytics Updates After Recommendation Creation...")
+        
+        if not self.admin_token:
+            self.log_result("Analytics Updates After Creation", False, "No admin token available")
+            return
+        
+        # Get initial analytics
+        response, error = self.make_request('GET', 'analytics', token=self.admin_token)
+        if not response or response.status_code != 200:
+            self.log_result("Analytics Updates - Initial Check", False, "Could not get initial analytics")
+            return
+        
+        initial_analytics = response.json()
+        initial_total_recommendations = initial_analytics.get('total_recommendation_requests', 0)
+        initial_pending_recommendations = initial_analytics.get('pending_recommendation_requests', 0)
+        
+        # Create a new recommendation request
+        recommendation_id = self.test_create_recommendation_with_enrollment_status()
+        
+        if not recommendation_id:
+            self.log_result("Analytics Updates After Creation", False, "Could not create test recommendation")
+            return
+        
+        # Get updated analytics
+        response, error = self.make_request('GET', 'analytics', token=self.admin_token)
+        if not response or response.status_code != 200:
+            self.log_result("Analytics Updates - After Creation", False, "Could not get updated analytics")
+            return
+        
+        updated_analytics = response.json()
+        updated_total_recommendations = updated_analytics.get('total_recommendation_requests', 0)
+        updated_pending_recommendations = updated_analytics.get('pending_recommendation_requests', 0)
+        
+        # Verify analytics updated
+        if (updated_total_recommendations > initial_total_recommendations and 
+            updated_pending_recommendations > initial_pending_recommendations):
+            self.log_result("Analytics Updates After Creation", True)
+            print(f"   Total recommendations: {initial_total_recommendations} -> {updated_total_recommendations}")
+            print(f"   Pending recommendations: {initial_pending_recommendations} -> {updated_pending_recommendations}")
+            
+            # Test staff assignment and workload
+            self.test_staff_assignment_and_workload_verification(recommendation_id)
+        else:
+            self.log_result("Analytics Updates After Creation", False, 
+                          f"Analytics not updated correctly: Total {initial_total_recommendations}->{updated_total_recommendations}, Pending {initial_pending_recommendations}->{updated_pending_recommendations}")
+
+    def run_admin_dashboard_analytics_tests(self):
+        """Run comprehensive admin dashboard analytics tests for review request"""
+        print("\n" + "="*80)
+        print("🎯 ADMIN DASHBOARD ANALYTICS API TESTING - REVIEW REQUEST")
+        print("="*80)
+        
+        # Login with specific admin credentials
+        if not self.test_admin_login_specific():
+            print("❌ Cannot proceed without admin login")
+            return
+        
+        # Create student account for testing
+        if not self.test_student_registration():
+            print("❌ Cannot create student account for testing")
+            return
+        
+        # Create staff account for workload testing
+        if not self.test_create_staff_user():
+            print("❌ Cannot create staff account for testing")
+            return
+        
+        if not self.test_staff_login_specific():
+            print("❌ Cannot login staff account for testing")
+            return
+        
+        # Run comprehensive analytics tests
+        self.test_admin_dashboard_analytics_comprehensive()
+        
+        # Test analytics updates with new data
+        self.test_analytics_after_recommendation_creation()
+        
+        print(f"\n📊 ADMIN DASHBOARD ANALYTICS TESTING COMPLETE")
+        print(f"Tests Run: {self.tests_run}")
+        print(f"Tests Passed: {self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+
     def test_notifications(self):
         """Test notifications endpoints"""
         print("\n🔍 Testing Notifications...")
