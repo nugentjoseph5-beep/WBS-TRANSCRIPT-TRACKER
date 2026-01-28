@@ -1734,15 +1734,27 @@ async def get_analytics(current_user: dict = Depends(get_current_user)):
         month_start = (now.replace(day=1) - timedelta(days=i*30)).replace(day=1)
         month_end = (month_start + timedelta(days=32)).replace(day=1)
         
-        count = await db.transcript_requests.count_documents({
+        # Count transcript requests for this month
+        transcript_count = await db.transcript_requests.count_documents({
             "created_at": {
                 "$gte": month_start.isoformat(),
                 "$lt": month_end.isoformat()
             }
         })
+        
+        # Count recommendation requests for this month
+        recommendation_count = await db.recommendation_requests.count_documents({
+            "created_at": {
+                "$gte": month_start.isoformat(),
+                "$lt": month_end.isoformat()
+            }
+        })
+        
         requests_by_month.append({
             "month": month_start.strftime("%b %Y"),
-            "count": count
+            "count": transcript_count,
+            "transcripts": transcript_count,
+            "recommendations": recommendation_count
         })
     
     # Get recommendation letter stats
