@@ -274,6 +274,7 @@ class RecommendationRequestResponse(BaseModel):
     address: str
     years_attended: List[dict] = []  # List of {"from_year": "2015", "to_year": "2020"}
     years_attended_str: str = ""  # Legacy string format for backward compatibility
+    enrollment_status: str = ""  # Added missing field
     last_form_class: str
     co_curricular_activities: str = ""
     reason: str = ""
