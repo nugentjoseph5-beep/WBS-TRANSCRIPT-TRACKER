@@ -5,27 +5,41 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, Mail, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Mail, CheckCircle, AlertTriangle, Copy, ExternalLink } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [resetLink, setResetLink] = useState(null); // For dev mode when email not configured
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await authAPI.forgotPassword(email);
+      const response = await authAPI.forgotPassword(email);
       setSubmitted(true);
-      toast.success('Password reset instructions sent!');
+      
+      // If token is returned (dev mode - email not configured), show the reset link
+      if (response.data?.token) {
+        const link = `${window.location.origin}/reset-password?token=${response.data.token}`;
+        setResetLink(link);
+        toast.success('Reset link generated (email service not configured)');
+      } else {
+        toast.success('Password reset instructions sent!');
+      }
     } catch (error) {
       // Still show success for security (don't reveal if email exists)
       setSubmitted(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const copyResetLink = () => {
+    navigator.clipboard.writeText(resetLink);
+    toast.success('Reset link copied to clipboard!');
   };
 
   return (
