@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
 import { recommendationAPI } from '@/lib/api';
@@ -11,9 +11,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { ArrowLeft, CalendarIcon, Loader2, Send, Award, Plus, Trash2 } from 'lucide-react';
+import { format, addDays, isWeekend } from 'date-fns';
+import { ArrowLeft, CalendarIcon, Loader2, Send, Award, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Helper function to calculate minimum date (5 working days from today)
+const getMinimumDate = () => {
+  let date = new Date();
+  let workingDays = 0;
+  
+  while (workingDays < 5) {
+    date = addDays(date, 1);
+    // Skip weekends (Saturday = 6, Sunday = 0)
+    if (date.getDay() !== 0 && date.getDay() !== 6) {
+      workingDays++;
+    }
+  }
+  
+  return date;
+};
+
+// Helper function to check if a date should be disabled
+const isDateDisabled = (date, minDate) => {
+  // Disable dates before minimum date
+  if (date < minDate) return true;
+  // Disable weekends
+  if (isWeekend(date)) return true;
+  return false;
+};
 
 export default function NewRecommendation() {
   const { user } = useAuth();
