@@ -858,8 +858,12 @@ export default function AdminDashboard() {
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Bar dataKey="transcripts" fill="#800000" name="Transcript Requests" />
-                        <Bar dataKey="recommendations" fill="#DAA520" name="Recommendation Requests" />
+                        <Bar dataKey="transcripts" fill="#800000" name="Transcript Requests">
+                          <LabelList dataKey="transcripts" position="top" fill="#800000" fontSize={11} />
+                        </Bar>
+                        <Bar dataKey="recommendations" fill="#DAA520" name="Recommendation Requests">
+                          <LabelList dataKey="recommendations" position="top" fill="#DAA520" fontSize={11} />
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
