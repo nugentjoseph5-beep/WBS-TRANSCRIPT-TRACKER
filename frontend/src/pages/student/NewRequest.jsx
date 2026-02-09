@@ -455,9 +455,12 @@ export default function NewRequest() {
                         mode="single"
                         selected={neededByDate}
                         onSelect={setNeededByDate}
-                        disabled={(date) => date < new Date()}
+                        disabled={(date) => isDateDisabled(date, minimumDate)}
                         initialFocus
                       />
+                      <p className="text-xs text-stone-500 p-3 border-t">
+                        Minimum 5 working days required. Weekends are not available.
+                      </p>
                     </PopoverContent>
                   </Popover>
                 </div>
