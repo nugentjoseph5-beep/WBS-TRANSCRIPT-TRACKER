@@ -146,17 +146,65 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
-              <h2 className="font-heading text-2xl font-bold text-stone-900 mb-2">Check your email</h2>
+              <h2 className="font-heading text-2xl font-bold text-stone-900 mb-2">
+                {resetLink ? 'Reset Link Generated' : 'Check your email'}
+              </h2>
               <p className="text-stone-600 mb-6">
-                If an account with <strong>{email}</strong> exists, we've sent you a link to reset your password.
+                {resetLink ? (
+                  <>Use the link below to reset your password for <strong>{email}</strong></>
+                ) : (
+                  <>If an account with <strong>{email}</strong> exists, we've sent you a link to reset your password.</>
+                )}
               </p>
-              <p className="text-sm text-stone-500 mb-8">
-                Didn't receive the email? Check your spam folder or try again.
-              </p>
+              
+              {/* Show reset link in dev mode (when email service not configured) */}
+              {resetLink && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-left">
+                  <div className="flex items-start gap-2 mb-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">Development Mode</p>
+                      <p className="text-xs text-amber-700">Email service is not configured. Use this link to reset your password:</p>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded border border-amber-200 p-2 mb-3">
+                    <p className="text-xs text-stone-600 break-all font-mono">{resetLink}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={copyResetLink}
+                      className="flex-1 border-amber-300 text-amber-700 hover:bg-amber-100"
+                    >
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy Link
+                    </Button>
+                    <Link to={`/reset-password?token=${resetLink.split('token=')[1]}`} className="flex-1">
+                      <Button
+                        size="sm"
+                        className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Open Link
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
+              
+              {!resetLink && (
+                <p className="text-sm text-stone-500 mb-8">
+                  Didn't receive the email? Check your spam folder or try again.
+                </p>
+              )}
               <div className="space-y-3">
                 <Button
                   variant="outline"
-                  onClick={() => setSubmitted(false)}
+                  onClick={() => {
+                    setSubmitted(false);
+                    setResetLink(null);
+                  }}
                   className="w-full"
                 >
                   Try another email
