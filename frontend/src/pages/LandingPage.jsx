@@ -146,10 +146,10 @@ export default function LandingPage() {
                 <Shield className="h-7 w-7 text-green-600" />
               </div>
               <h4 className="font-heading text-xl font-semibold text-stone-900 mb-3">
-                Secure Collection
+                Flexible Collection
               </h4>
               <p className="text-stone-600 leading-relaxed">
-                Choose your preferred collection method: pickup from school, email directly to institution, or physical delivery to your address.
+                Choose your preferred collection method: pickup from school, email directly to institution, or courier delivery service to your address.
               </p>
             </div>
           </div>
