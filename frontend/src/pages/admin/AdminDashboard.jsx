@@ -8,7 +8,7 @@ import { formatDate, getStatusBadgeClass, exportAnalyticsToPDF, exportAnalyticsT
 import { toast } from 'sonner';
 import { 
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Legend 
+  Tooltip, ResponsiveContainer, Legend, LabelList
 } from 'recharts';
 import { 
   LayoutDashboard, FileText, Users, Bell, LogOut, Menu, X,
@@ -18,6 +18,20 @@ import {
 
 const COLORS = ['#800000', '#FFD700', '#78716C', '#22c55e', '#3b82f6', '#ef4444'];
 const WORKLOAD_COLORS = ['#800000', '#3b82f6', '#22c55e', '#f97316', '#8b5cf6', '#06b6d4', '#78716c'];
+
+// Custom label renderer for pie charts
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value, name }) => {
+  if (value === 0) return null;
+  const RADIAN = Math.PI / 180;
+  const radius = outerRadius + 25;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="#333" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12}>
+      {`${name}: ${value}`}
+    </text>
+  );
+};
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
