@@ -631,6 +631,7 @@ export default function AdminDashboard() {
                           {overdueComparison.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
+                          <LabelList dataKey="value" position="right" fill="#333" fontSize={12} />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
@@ -650,8 +651,12 @@ export default function AdminDashboard() {
                         <YAxis />
                         <Tooltip />
                         <Legend />
-                        <Bar dataKey="transcripts" fill="#800000" name="Transcripts" />
-                        <Bar dataKey="recommendations" fill="#DAA520" name="Recommendations" />
+                        <Bar dataKey="transcripts" fill="#800000" name="Transcripts">
+                          <LabelList dataKey="transcripts" position="top" fill="#800000" fontSize={11} />
+                        </Bar>
+                        <Bar dataKey="recommendations" fill="#DAA520" name="Recommendations">
+                          <LabelList dataKey="recommendations" position="top" fill="#DAA520" fontSize={11} />
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -677,6 +682,8 @@ export default function AdminDashboard() {
                             outerRadius={100}
                             paddingAngle={2}
                             dataKey="value"
+                            label={renderCustomizedLabel}
+                            labelLine={true}
                           >
                             {enrollmentData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -711,6 +718,8 @@ export default function AdminDashboard() {
                             outerRadius={100}
                             paddingAngle={2}
                             dataKey="value"
+                            label={renderCustomizedLabel}
+                            labelLine={true}
                           >
                             {recommendationsEnrollmentData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
