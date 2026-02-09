@@ -477,13 +477,26 @@ export default function NewRequest() {
                     <SelectContent>
                       <SelectItem value="pickup">Pickup at Bursary</SelectItem>
                       <SelectItem value="emailed">Email to Institution</SelectItem>
-                      <SelectItem value="delivery">Physical Delivery to Address</SelectItem>
+                      <SelectItem value="delivery">Courier Delivery Service</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Delivery Address - Show when physical delivery is selected */}
+              {/* Courier Service Warning */}
+              {formData.collection_method === 'delivery' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-800">Paid Service Notice</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Courier Delivery Service is a paid service. All local delivery charges apply and will be communicated to you before dispatch.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Delivery Address - Show when courier delivery is selected */}
               {formData.collection_method === 'delivery' && (
                 <div className="space-y-2">
                   <Label htmlFor="delivery_address">Delivery Address *</Label>
