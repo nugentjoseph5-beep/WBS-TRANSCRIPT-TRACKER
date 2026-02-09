@@ -46,6 +46,9 @@ export default function NewRecommendation() {
   const [loading, setLoading] = useState(false);
   const [neededByDate, setNeededByDate] = useState(null);
   
+  // Calculate minimum date (5 working days from today)
+  const minimumDate = useMemo(() => getMinimumDate(), []);
+  
   // Year ranges for attendance
   const [yearsAttended, setYearsAttended] = useState([{ from_year: '', to_year: '' }]);
   
