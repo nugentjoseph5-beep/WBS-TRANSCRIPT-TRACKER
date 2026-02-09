@@ -757,6 +757,8 @@ export default function AdminDashboard() {
                             outerRadius={100}
                             paddingAngle={2}
                             dataKey="value"
+                            label={renderCustomizedLabel}
+                            labelLine={true}
                           >
                             {transcriptStatusData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -791,6 +793,8 @@ export default function AdminDashboard() {
                             outerRadius={100}
                             paddingAngle={2}
                             dataKey="value"
+                            label={renderCustomizedLabel}
+                            labelLine={true}
                           >
                             {recommendationStatusData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -829,6 +833,7 @@ export default function AdminDashboard() {
                           {staffWorkloadData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={WORKLOAD_COLORS[index % WORKLOAD_COLORS.length]} />
                           ))}
+                          <LabelList dataKey="requests" position="top" fill="#333" fontSize={12} />
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
