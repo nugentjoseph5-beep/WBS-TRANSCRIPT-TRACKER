@@ -46,6 +46,9 @@ export default function NewRequest() {
   const [loading, setLoading] = useState(false);
   const [neededByDate, setNeededByDate] = useState(null);
   
+  // Calculate minimum date (5 working days from today)
+  const minimumDate = useMemo(() => getMinimumDate(), []);
+  
   // Academic year ranges
   const [academicYears, setAcademicYears] = useState([{ from_year: '', to_year: '' }]);
   
