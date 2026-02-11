@@ -38,7 +38,7 @@ cd backend
 if ! python -c "import fastapi" 2>/dev/null; then
     echo ""
     echo "Python dependencies not found. Installing..."
-    pip install -r requirements.txt
+    python -m pip install -r requirements.txt
 fi
 
 # Start the backend server

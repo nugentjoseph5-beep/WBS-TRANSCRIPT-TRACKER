@@ -46,7 +46,7 @@ fi
 
 if ! python -c "import fastapi" 2>/dev/null; then
     echo "Installing Python dependencies..."
-    pip install -r requirements.txt
+    python -m pip install -r requirements.txt
 fi
 
 python -m uvicorn server:app --reload --host 0.0.0.0 --port 8000 &
