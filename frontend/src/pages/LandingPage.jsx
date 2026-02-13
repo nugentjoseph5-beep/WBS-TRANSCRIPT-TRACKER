@@ -186,7 +186,7 @@ export default function LandingPage() {
             {/* Staff Portal */}
             <div className="border-2 border-stone-200 rounded-lg p-8 hover:border-gold-500 transition-colors">
               <div className="w-12 h-12 rounded-full bg-gold-500 text-maroon-900 flex items-center justify-center mb-4">
-                <span className="font-heading font-bold text-lg">T</span>
+                <p>S</p>
               </div>
               <h4 className="font-heading text-xl font-semibold text-stone-900 mb-2">Staff Portal</h4>
               <p className="text-stone-600 text-sm mb-4">Process assigned requests, update status, and upload documents.</p>
