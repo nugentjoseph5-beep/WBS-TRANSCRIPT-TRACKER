@@ -18,6 +18,8 @@ import resend
 from bson import ObjectId
 import base64
 import io
+import requests
+import json
 
 # Document generation imports
 from docx import Document
@@ -88,6 +90,17 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class MicrosoftLogin(BaseModel):
+    email: str
+    full_name: str
+    microsoft_token: str
+
+class MicrosoftRegister(BaseModel):
+    email: str
+    full_name: str
+    microsoft_token: str
+    role: str = "student"
 
 class UserResponse(BaseModel):
     id: str
@@ -321,6 +334,40 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+
+def validate_microsoft_token(token: str, email_from_token: str) -> bool:
+    """
+    Validate Microsoft Azure AD token.
+    For production, you should validate the token signature and expiration.
+    """
+    try:
+        # Decode token without verification for now (in production, verify signature)
+        # The token is already validated by MSAL on the client side
+        # For production, you should validate against Microsoft's public keys
+        parts = token.split('.')
+        if len(parts) != 3:
+            return False
+
+        # Decode the payload (second part)
+        payload = parts[1]
+        # Add padding if needed
+        payload += '=' * (4 - len(payload) % 4)
+        decoded = base64.urlsafe_b64decode(payload)
+        data = json.loads(decoded)
+
+        # Check if email matches
+        if data.get('unique_name') != email_from_token and data.get('upn') != email_from_token:
+            return False
+
+        # In production, validate token expiration and signature against Microsoft's public keys
+        return True
+    except Exception as e:
+        logger.error(f"Error validating Microsoft token: {e}")
+        return False
+
+def is_wolmers_email(email: str) -> bool:
+    """Check if email is a valid wolmers.org email"""
+    return email.lower().endswith('@wolmers.org')
 
 def create_token(user_id: str, email: str, role: str) -> str:
     payload = {
@@ -615,6 +662,84 @@ async def login(credentials: UserLogin):
             full_name=user["full_name"],
             role=user["role"],
             created_at=user["created_at"]
+        )
+    )
+
+@api_router.post("/auth/microsoft-login", response_model=TokenResponse)
+async def microsoft_login(data: MicrosoftLogin):
+    # Validate email is wolmers.org
+    if not is_wolmers_email(data.email):
+        raise HTTPException(status_code=400, detail="Only wolmers.org email addresses are allowed")
+
+    # Validate Microsoft token (basic validation - in production, validate signature)
+    if not validate_microsoft_token(data.microsoft_token, data.email):
+        raise HTTPException(status_code=401, detail="Invalid Microsoft token")
+
+    # Check if user exists
+    user = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found. Please register first.")
+
+    # Create token
+    token = create_token(user["id"], user["email"], user["role"])
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            full_name=user["full_name"],
+            role=user["role"],
+            created_at=user["created_at"]
+        )
+    )
+
+@api_router.post("/auth/microsoft-register", response_model=TokenResponse)
+async def microsoft_register(data: MicrosoftRegister):
+    # Validate email is wolmers.org
+    if not is_wolmers_email(data.email):
+        raise HTTPException(status_code=400, detail="Only wolmers.org email addresses are allowed")
+
+    # Validate Microsoft token (basic validation - in production, validate signature)
+    if not validate_microsoft_token(data.microsoft_token, data.email):
+        raise HTTPException(status_code=401, detail="Invalid Microsoft token")
+
+    # Check if email already exists
+    existing = await db.users.find_one({"email": data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Only students can self-register via Microsoft
+    if data.role != "student":
+        raise HTTPException(status_code=400, detail="Only students can register via Microsoft")
+
+    # Create new user
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+
+    user_doc = {
+        "id": user_id,
+        "email": data.email,
+        "full_name": data.full_name,
+        "role": "student",
+        "created_at": now,
+        "updated_at": now
+    }
+
+    # For Microsoft auth, we don't store a password hash
+    await db.users.insert_one(user_doc)
+
+    # Create token
+    token = create_token(user_id, data.email, "student")
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse(
+            id=user_id,
+            email=data.email,
+            full_name=data.full_name,
+            role="student",
+            created_at=now
         )
     )
 

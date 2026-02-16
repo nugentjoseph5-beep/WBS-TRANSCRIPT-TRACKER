@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    
+
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
       // Verify token is still valid
@@ -31,22 +31,53 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const response = await authAPI.login({ email, password });
     const { access_token, user: userData } = response.data;
-    
+
     localStorage.setItem('token', access_token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    
+
+    return userData;
+  };
+
+  const loginWithMicrosoft = async (data) => {
+    const response = await authAPI.loginWithMicrosoft({
+      email: data.email,
+      full_name: data.name,
+      microsoft_token: data.microsoftToken,
+    });
+    const { access_token, user: userData } = response.data;
+
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+
     return userData;
   };
 
   const register = async (data) => {
     const response = await authAPI.register(data);
     const { access_token, user: userData } = response.data;
-    
+
     localStorage.setItem('token', access_token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    
+
+    return userData;
+  };
+
+  const registerWithMicrosoft = async (data) => {
+    const response = await authAPI.registerWithMicrosoft({
+      full_name: data.full_name,
+      email: data.email,
+      microsoft_token: data.microsoftToken,
+      role: data.role,
+    });
+    const { access_token, user: userData } = response.data;
+
+    localStorage.setItem('token', access_token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+
     return userData;
   };
 
@@ -66,7 +97,9 @@ export const AuthProvider = ({ children }) => {
       user,
       loading,
       login,
+      loginWithMicrosoft,
       register,
+      registerWithMicrosoft,
       logout,
       isAuthenticated,
       isStudent,

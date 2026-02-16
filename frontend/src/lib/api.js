@@ -37,6 +37,8 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
+  loginWithMicrosoft: (data) => api.post('/auth/microsoft-login', data),
+  registerWithMicrosoft: (data) => api.post('/auth/microsoft-register', data),
   getMe: () => api.get('/auth/me'),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),

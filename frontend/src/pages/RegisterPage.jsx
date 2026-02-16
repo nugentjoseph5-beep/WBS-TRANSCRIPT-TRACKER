@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth';
+import { useMsal } from '@azure/msal-react';
+import { loginRequest, isWolmersEmail } from '@/lib/msalConfig';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Mail } from 'lucide-react';
+import RequestWolmersEmailForm from '@/components/RequestWolmersEmailForm';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -16,14 +19,51 @@ export default function RegisterPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const [showEmailRequest, setShowEmailRequest] = useState(false);
+  const [signupMode, setSignupMode] = useState('microsoft'); // 'microsoft' or 'traditional'
+  const { register, registerWithMicrosoft } = useAuth();
   const navigate = useNavigate();
+  const { instance } = useMsal();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleMicrosoftSignup = async () => {
+    setLoading(true);
+    try {
+      const response = await instance.loginPopup(loginRequest);
+      const email = response.account.username;
+
+      if (!isWolmersEmail(email)) {
+        toast.error('Please use your wolmers.org email address');
+        await instance.logoutPopup({ account: response.account });
+        setShowEmailRequest(true);
+        setLoading(false);
+        return;
+      }
+
+      const user = await registerWithMicrosoft({
+        full_name: response.account.name,
+        email,
+        microsoftToken: response.accessToken,
+        role: 'student',
+      });
+
+      toast.success('Registration successful! Welcome to Wolmer\'s Transcript Tracker.');
+      navigate('/student');
+    } catch (error) {
+      if (error.errorCode === 'user_cancelled') {
+        // User cancelled login, don't show error
+      } else {
+        toast.error(error.errorCode === 'user_cancelled' ? 'Registration cancelled' : 'Microsoft signup failed');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTraditionalSignup = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
@@ -124,107 +164,174 @@ export default function RegisterPage() {
             </Link>
           </div>
 
-          <div>
-            <h2 className="font-heading text-3xl font-bold text-stone-900 mb-2">Create your account</h2>
-            <p className="text-stone-600">Register as a student to request transcripts and recommendation letters</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5" data-testid="register-form">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input
-                id="full_name"
-                name="full_name"
-                type="text"
-                placeholder="John Doe"
-                value={formData.full_name}
-                onChange={handleChange}
-                required
-                className="h-12 focus:ring-maroon-500"
-                data-testid="register-name-input"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="h-12 focus:ring-maroon-500"
-                data-testid="register-email-input"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Create a password (min 6 characters)"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength={6}
-                  className="h-12 pr-12 focus:ring-maroon-500"
-                  data-testid="register-password-input"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-700"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
+          {/* Email Request Form */}
+          {showEmailRequest ? (
+            <RequestWolmersEmailForm onBack={() => setShowEmailRequest(false)} />
+          ) : (
+            <>
+              <div>
+                <h2 className="font-heading text-3xl font-bold text-stone-900 mb-2">Create your account</h2>
+                <p className="text-stone-600">Register as a student to request transcripts and recommendation letters</p>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="h-12 focus:ring-maroon-500"
-                data-testid="register-confirm-password-input"
-              />
-            </div>
+              {/* Microsoft 365 Sign Up */}
+              {signupMode === 'microsoft' && (
+                <div className="space-y-4">
+                  <Button
+                    onClick={handleMicrosoftSignup}
+                    disabled={loading}
+                    className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center justify-center gap-3"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-5 w-5" />
+                        Sign up with Microsoft 365
+                      </>
+                    )}
+                  </Button>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 bg-maroon-500 hover:bg-maroon-600 text-white font-medium"
-              data-testid="register-submit-btn"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                'Create Account'
+                  <p className="text-center text-sm text-stone-600">
+                    Use your <span className="font-medium text-stone-900">wolmers.org</span> email address
+                  </p>
+
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-stone-200"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white text-stone-500">or</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => setSignupMode('traditional')}
+                    variant="outline"
+                    className="w-full h-11 border-stone-300 text-stone-700 hover:bg-stone-50"
+                  >
+                    Create Account with Email
+                  </Button>
+
+                  <Button
+                    onClick={() => setShowEmailRequest(true)}
+                    variant="ghost"
+                    className="w-full h-11 text-maroon-500 hover:bg-maroon-50"
+                  >
+                    Don't have a wolmers.org email? Request one
+                  </Button>
+                </div>
               )}
-            </Button>
-          </form>
 
-          <div className="text-center">
-            <p className="text-stone-600">
-              Already have an account?{' '}
-              <Link to="/login" className="text-maroon-500 hover:text-maroon-600 font-medium">
-                Sign in
-              </Link>
-            </p>
-          </div>
+              {/* Traditional Signup */}
+              {signupMode === 'traditional' && (
+                <>
+                  <form onSubmit={handleTraditionalSignup} className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">Full Name</Label>
+                      <Input
+                        id="full_name"
+                        name="full_name"
+                        type="text"
+                        placeholder="John Doe"
+                        value={formData.full_name}
+                        onChange={handleChange}
+                        required
+                        className="h-12 focus:ring-maroon-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email address</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        className="h-12 focus:ring-maroon-500"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Create a password (min 6 characters)"
+                          value={formData.password}
+                          onChange={handleChange}
+                          required
+                          minLength={6}
+                          className="h-12 pr-12 focus:ring-maroon-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-700"
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Confirm your password"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        required
+                        className="h-12 focus:ring-maroon-500"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full h-12 bg-maroon-500 hover:bg-maroon-600 text-white font-medium"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating account...
+                        </>
+                      ) : (
+                        'Create Account'
+                      )}
+                    </Button>
+                  </form>
+
+                  <Button
+                    onClick={() => setSignupMode('microsoft')}
+                    variant="outline"
+                    className="w-full h-11 border-stone-300 text-stone-700 hover:bg-stone-50"
+                  >
+                    Back to Microsoft 365 Sign Up
+                  </Button>
+                </>
+              )}
+
+              <div className="text-center">
+                <p className="text-stone-600">
+                  Already have an account?{' '}
+                  <Link to="/login" className="text-maroon-500 hover:text-maroon-600 font-medium">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
