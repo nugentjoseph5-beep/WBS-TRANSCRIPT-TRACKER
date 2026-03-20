@@ -1,0 +1,175 @@
+{
+  "identity": {
+    "name": "Wolmer's Transcript Tracker",
+    "persona": "E1: The Anti-AI Designer",
+    "tone": "Institutional, Prestigious, Efficient, Trustworthy",
+    "theme_mode": "light"
+  },
+  "typography": {
+    "font_family": {
+      "heading": "Playfair Display, serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-bold tracking-tight",
+      "h2": "text-3xl md:text-4xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold",
+      "p": "text-base leading-relaxed text-stone-600",
+      "small": "text-sm font-medium text-stone-500 uppercase tracking-wider"
+    },
+    "imports": [
+      "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap');"
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#800000",
+        "foreground": "#FFFFFF",
+        "hover": "#600000",
+        "active": "#4a0000"
+      },
+      "secondary": {
+        "DEFAULT": "#FFD700",
+        "foreground": "#3a3000",
+        "hover": "#e6c200"
+      },
+      "background": "#FFFFFF",
+      "foreground": "#1C1917",
+      "muted": {
+        "DEFAULT": "#F5F5F4",
+        "foreground": "#78716C"
+      },
+      "card": {
+        "DEFAULT": "#FFFFFF",
+        "foreground": "#1C1917"
+      },
+      "border": "#E7E5E4",
+      "input": "#E7E5E4",
+      "ring": "#800000"
+    },
+    "semantic": {
+      "success": "#15803d",
+      "warning": "#b45309",
+      "error": "#b91c1c",
+      "info": "#0369a1"
+    }
+  },
+  "visual_enhancers": {
+    "radius": "0.375rem",
+    "shadows": {
+      "card": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+      "hover": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+      "modal": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+    },
+    "borders": "1px solid #E7E5E4",
+    "glassmorphism": "bg-white/80 backdrop-blur-md border border-white/20 shadow-sm",
+    "gradients": {
+      "gold_shimmer": "linear-gradient(45deg, #FFD700 0%, #FDB931 100%)",
+      "maroon_depth": "linear-gradient(to bottom right, #800000, #4a0000)"
+    }
+  },
+  "layout_strategies": {
+    "auth_pages": {
+      "structure": "grid grid-cols-1 lg:grid-cols-2 h-screen w-full",
+      "left_panel": "relative hidden lg:flex flex-col justify-between p-12 bg-stone-900 text-white",
+      "right_panel": "flex items-center justify-center p-8 bg-white",
+      "image_overlay": "absolute inset-0 bg-maroon-900/40 mix-blend-multiply"
+    },
+    "student_dashboard": {
+      "structure": "min-h-screen bg-stone-50",
+      "container": "max-w-5xl mx-auto p-6 md:p-12 space-y-8",
+      "grid": "grid grid-cols-1 md:grid-cols-12 gap-6",
+      "timeline_card": "col-span-1 md:col-span-8 bg-white p-6 rounded-md shadow-sm border-l-4 border-primary"
+    },
+    "admin_dashboard": {
+      "structure": "flex h-screen bg-stone-50 overflow-hidden",
+      "sidebar": "w-64 bg-stone-900 text-stone-300 hidden md:flex flex-col border-r border-stone-800",
+      "main": "flex-1 overflow-y-auto p-8",
+      "grid": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#800000] text-white hover:bg-[#600000] shadow-sm font-medium px-6 py-2 rounded-md transition-all duration-200",
+      "secondary": "bg-[#FFD700] text-[#3a3000] hover:bg-[#e6c200] shadow-sm font-medium px-6 py-2 rounded-md transition-all duration-200",
+      "outline": "border-2 border-[#800000] text-[#800000] hover:bg-[#800000] hover:text-white font-medium px-6 py-2 rounded-md transition-all duration-200",
+      "ghost": "text-stone-600 hover:bg-stone-100 hover:text-stone-900 px-4 py-2 rounded-md"
+    },
+    "cards": {
+      "base": "bg-white border border-stone-200 rounded-md shadow-sm hover:shadow-md transition-shadow duration-200",
+      "header": "px-6 py-4 border-b border-stone-100 flex items-center justify-between",
+      "content": "p-6"
+    },
+    "inputs": {
+      "base": "flex h-10 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#800000] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "badges": {
+      "pending": "bg-yellow-100 text-yellow-800 border border-yellow-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+      "processing": "bg-blue-100 text-blue-800 border border-blue-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+      "completed": "bg-green-100 text-green-800 border border-green-200 px-2.5 py-0.5 rounded-full text-xs font-semibold",
+      "rejected": "bg-red-100 text-red-800 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-semibold"
+    }
+  },
+  "image_urls": {
+    "auth_background": {
+      "url": "https://images.unsplash.com/photo-1705756566946-f39616809f5c?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Wolmer's Boys' School Historic Building",
+      "category": "background"
+    },
+    "student_life": {
+      "url": "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Students on campus",
+      "category": "content"
+    },
+    "logo_placeholder": {
+      "url": "https://via.placeholder.com/150x150/800000/FFD700?text=WBS",
+      "alt": "Wolmer's Crest Placeholder",
+      "category": "logo"
+    }
+  },
+  "motion": {
+    "transitions": "transition-all duration-200 ease-in-out",
+    "hover_lift": "hover:-translate-y-1 hover:shadow-lg",
+    "fade_in": "animate-in fade-in duration-500",
+    "slide_up": "animate-in slide-in-from-bottom-4 duration-500"
+  },
+  "accessibility": {
+    "contrast_check": "Ensure all text on Maroon background is White. Text on Gold background must be Dark Brown/Black.",
+    "focus_states": "Focus rings must be Maroon (#800000) with 2px offset.",
+    "aria_labels": "Required for all icon-only buttons."
+  },
+  "instructions_to_main_agent": [
+    "1. INSTALL FONTS: Add the Google Fonts import to index.css immediately.",
+    "2. CONFIGURE TAILWIND: Update tailwind.config.js with the specific Maroon (#800000) and Gold (#FFD700) colors under 'extend.colors'.",
+    "3. AUTH LAYOUT: Use the 'Split Screen' layout for all login/register pages. Left side is the School Building image with a Maroon overlay. Right side is the form.",
+    "4. STUDENT DASHBOARD: Do not use a sidebar. Use a top navigation bar with a 'Mega Menu' feel. The main content should be a centered timeline of their transcript request.",
+    "5. ADMIN DASHBOARD: Use a Sidebar layout. The dashboard must be dense. Use 'Table' components heavily.",
+    "6. STATUS BADGES: Use the specific color mappings defined in 'components.badges'.",
+    "7. LOGO: Since we don't have the official SVG, render a text-based logo using 'Playfair Display' font: 'Wolmer's Boys' School' in Maroon.",
+    "8. FORMS: Use Shadcn Form components but style the inputs with 'focus:ring-[#800000]'.",
+    "9. TOASTS: Use 'sonner' for all notifications.",
+    "10. CHARTS: Use Recharts with the Maroon/Gold palette for the Admin Dashboard."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: transition: all. This results in breaking transforms. Always add transitions for specific interactive elements like button, input excluding transforms",
+    "You MUST NOT center align the app container, ie do not add .App { text-align: center; } in the css file. This disrupts the human natural reading flow of text",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯📚🎭🎬🎪🎉🎊🎁🎀🎂🍰🎈🎨🎰💰💵💳🏦💎🪙💸🤑📊📈📉💹🔢🏆🥇 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on these image URLs. Missing categories (especially sponsor logos) = main agent will use placeholder text which is FORBIDDEN",
+    "Prioritize using pre-existing components from src/components/ui when applicable",
+    "Create new components that match the style and conventions of existing components when needed",
+    "Examine existing components to understand the project's component patterns before creating new ones",
+    "Components MUST use named exports (export const ComponentName = ...)",
+    "Pages MUST use default exports (export default function PageName() {...})",
+    "Use sonner for toasts. Sonner component are located in /app/src/components/ui/sonner.tsx"
+  ]
+}
